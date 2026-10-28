@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Цитадель · SMM KADR
 
-## Getting Started
+Единая операционная PWA-платформа агентства: сайт и заявки, CRM, проекты и производство, календарь, контроль, финансы и зарплаты.
 
-First, run the development server:
-
+## Быстрый старт
 ```bash
+npm install
+cp .env.example .env.local   # заполнить значения Supabase
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Первый запуск (владелец)
+1. Откройте `/setup`, создайте аккаунт владельца и подтвердите email.
+2. Войдите и нажмите «Стать владельцем» (доступно только один раз).
+3. «Сотрудники» → «Добавить сотрудника» → QR-приглашение.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Руководство пользователя (кратко)
+- **Владелец/управляющий**: главная → 4 раздела и события, требующие решения; «Заявки» — входящие с сайта в реальном времени; «Проекты» → «+ Новый проект»; допуск — после 100% подтверждённой оплаты и чек-листа.
+- **Исполнитель**: «Сегодня» — всё на день; «Контент» → карточка материала → «Следующий шаг»; «Съёмки» → подтвердить участие.
+- **Бухгалтер**: «Бухгалтерия» → подтверждение поступлений и расходов; «Зарплаты» → расчёт, утверждение, выплаты.
+- **Установка на телефон**: кнопка «Скачать приложение» (Android) или Safari → Поделиться → «На экран Домой» (iPhone).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Разработчику
+Смотрите `CLAUDE.md` и `docs/`. Проверки: `npm run typecheck && npm run lint && npm test && npm run build`.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Резервные копии
+Supabase делает ежедневные бэкапы на платных планах; на Free — выполняйте `pg_dump` по строке подключения из Supabase Dashboard → Database (см. docs/IMPLEMENTATION_PLAN.md). Восстановление проверяется развёртыванием дампа в отдельный проект.

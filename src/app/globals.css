@@ -1,26 +1,135 @@
 @import "tailwindcss";
 
+/* Цитадель — дизайн-токены. Рабочая часть спокойная (тёмно-зелёная/светлая), красный — брендовый акцент. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --surface-2: #eef3f0;
+  --border: #d6e0da;
+  --text: #13201b;
+  --muted: #5b6e65;
+  --primary: #1f8f72;
+  --primary-ink: #ffffff;
+  --brand: #c8102e;
+  --brand-soft: #fde8eb;
+  --good: #15803d;
+  --good-soft: #dcfce7;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --bad: #b91c1c;
+  --bad-soft: #fee2e2;
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+  --ring: #1f8f7255;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg: #101a17;
+    --surface: #16231f;
+    --surface-2: #1a2923;
+    --border: #2e4239;
+    --text: #e3eee9;
+    --muted: #93a89e;
+    --primary: #7fd8c0;
+    --primary-ink: #0d1714;
+    --brand: #ff4d5e;
+    --brand-soft: #3a1418;
+    --good: #4ade80;
+    --good-soft: #14321f;
+    --warn: #fbbf24;
+    --warn-soft: #3a2c0c;
+    --bad: #f87171;
+    --bad-soft: #3b1414;
+    --info: #93c5fd;
+    --info-soft: #172a45;
+    --ring: #7fd8c055;
+    color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #101a17;
+  --surface: #16231f;
+  --surface-2: #1a2923;
+  --border: #2e4239;
+  --text: #e3eee9;
+  --muted: #93a89e;
+  --primary: #7fd8c0;
+  --primary-ink: #0d1714;
+  --brand: #ff4d5e;
+  --brand-soft: #3a1418;
+  --good: #4ade80;
+  --good-soft: #14321f;
+  --warn: #fbbf24;
+  --warn-soft: #3a2c0c;
+  --bad: #f87171;
+  --bad-soft: #3b1414;
+  --info: #93c5fd;
+  --info-soft: #172a45;
+  --ring: #7fd8c055;
+  color-scheme: dark;
+}
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: var(--font-ui), system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-ui), sans-serif;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.input {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 15px;
+}
+.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+textarea.input { min-height: 88px; }
+select.input { appearance: auto; }
+.label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tr:hover td { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+
+@media (max-width: 767px) {
+  .safe-bottom { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
