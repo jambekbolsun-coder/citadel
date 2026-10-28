@@ -1,7 +1,7 @@
 // Цитадель — service worker.
 // Безопасная стратегия: кэшируются только статические ресурсы и офлайн-страница.
 // Приватные ответы API, HTML страниц /app и запросы к Supabase НЕ кэшируются.
-const VERSION = "citadel-v1";
+const VERSION = "citadel-v2";
 const STATIC = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png", "/logo.webp"];
 
 self.addEventListener("install", (e) => {
@@ -45,7 +45,7 @@ self.addEventListener("fetch", (e) => {
   }
 });
 
-// Web Push (если пользователь разрешил и сервер отправил)
+// Web Push: приходит и при закрытом приложении (отправляет edge-функция push-dispatch)
 self.addEventListener("push", (e) => {
   let data = { title: "Цитадель", body: "Новое уведомление", url: "/app/notifications" };
   try {
@@ -56,6 +56,7 @@ self.addEventListener("push", (e) => {
       body: data.body,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
+      tag: data.tag,
       data: { url: data.url },
     }),
   );

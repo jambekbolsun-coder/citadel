@@ -8,6 +8,7 @@ import { PeopleSelect } from "@/components/people-select";
 import { activePeople, nameOf } from "@/lib/data";
 import { PRIORITY, TASK_STATUS } from "@/lib/labels";
 import { dateTime, isoToLocalInput, overdueText } from "@/lib/format";
+import { SeriesCard } from "@/components/series-card";
 import { rescheduleTask, transitionTask } from "../actions";
 
 const NEXT: Record<string, string[]> = {
@@ -57,6 +58,7 @@ export default async function TaskPage({ params }: PageProps<"/app/tasks/[id]">)
           </Card>
         </div>
         <div className="space-y-4">
+          {t.series_id && <SeriesCard entity="task" id={id} seriesId={t.series_id} from={t.due_at} canManage={canManage} />}
           {(NEXT[t.status] ?? []).length > 0 && (
             <Card title="Изменить статус">
               <ActionForm action={transitionTask} className="space-y-2">

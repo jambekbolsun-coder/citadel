@@ -8,10 +8,12 @@ import { PeopleSelect } from "@/components/people-select";
 import { activePeople, nameOf } from "@/lib/data";
 import { RESPONSE, SHOOT_ROLE } from "@/lib/labels";
 import { dateTime, isoToLocalInput, time } from "@/lib/format";
+import { SeriesCard } from "@/components/series-card";
 import * as A from "../actions";
 
-export default async function ShootPage({ params }: PageProps<"/app/shoots/[id]">) {
+export default async function ShootPage({ params, searchParams }: PageProps<"/app/shoots/[id]">) {
   const { id } = await params;
+  const sp = await searchParams;
   const s = await requireActive();
   const supabase = await createClient();
   const { data: sh } = await supabase.from("shoots").select("*, projects(id,name,admin_id,manager_id,planning_director_id,creative_director_id)").eq("id", id).maybeSingle();
@@ -36,6 +38,7 @@ export default async function ShootPage({ params }: PageProps<"/app/shoots/[id]"
       <PageHeader back="/app/shoots" title={sh.title} subtitle={<><Link href={`/app/projects/${pr.id}?tab=shoots`} className="hover:underline">{pr.name}</Link> · {dateTime(sh.starts_at)}–{time(sh.ends_at)} · {sh.location ?? "место не указано"}</>}
         actions={<Badge status={sh.status === "planned" ? "pending" : sh.status === "done" ? "done" : "cancelled"}>{sh.status === "planned" ? "Запланирована" : sh.status === "done" ? "Проведена" : "Отменена"}</Badge>} />
       {sh.status === "cancelled" && <div className="mb-4"><Notice tone="bad">Отменена: {sh.cancel_reason}</Notice></div>}
+      {sp.series === "created" && <div className="mb-4"><Notice tone="good">Серия съёмок создана. Назначьте участников с галочкой «на все будущие съёмки серии».</Notice></div>}
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="space-y-4">
           {mine && sh.status === "planned" && (
@@ -65,6 +68,7 @@ export default async function ShootPage({ params }: PageProps<"/app/shoots/[id]"
                 <select name="role" className="input">{Object.entries(SHOOT_ROLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
                 <Submit variant="secondary">Назначить</Submit>
                 <label className="flex items-center gap-2 text-xs text-muted sm:col-span-3"><input type="checkbox" name="force" /> назначить несмотря на конфликт по времени</label>
+                {sh.series_id && <label className="flex items-center gap-2 text-xs text-muted sm:col-span-3"><input type="checkbox" name="apply_series" defaultChecked={sp.series === "created"} /> на эту и все будущие съёмки серии</label>}
               </ActionForm>
             )}
           </Card>
@@ -86,6 +90,7 @@ export default async function ShootPage({ params }: PageProps<"/app/shoots/[id]"
           </Card>
         </div>
         <div className="space-y-4">
+          {sh.series_id && <SeriesCard entity="shoot" id={id} seriesId={sh.series_id} from={sh.starts_at} canManage={canTime} />}
           {sh.status === "planned" && (isMob || mgr) && (
             <Card title="Отметить проведённой">
               <ActionForm action={A.completeShoot} className="space-y-2">
@@ -115,7 +120,7 @@ export default async function ShootPage({ params }: PageProps<"/app/shoots/[id]"
           <Card title="История">
             <ol className="space-y-2 text-sm">{(hist ?? []).map((h: { id: number; kind: string; data: Record<string, string>; actor_id: string; created_at: string }) => (
               <li key={h.id} className="border-l-2 border-line pl-3">
-                <b>{h.kind === "reschedule" ? `Перенос ${dateTime(h.data.from)} → ${dateTime(h.data.to)}` : h.kind === "response" ? `Ответ: ${RESPONSE[h.data.response]}` : `Назначен ${nameOf(people, h.data.user)} (${SHOOT_ROLE[h.data.role]})${h.data.forced ? " — с конфликтом" : ""}`}</b>
+                <b>{h.kind === "reschedule" ? `Перенос ${dateTime(h.data.from)} → ${dateTime(h.data.to)}` : h.kind === "cancel" ? "Отмена (серия)" : h.kind === "response" ? `Ответ: ${RESPONSE[h.data.response]}` : `Назначен ${nameOf(people, h.data.user)} (${SHOOT_ROLE[h.data.role]})${h.data.forced ? " — с конфликтом" : ""}`}</b>
                 {h.data.reason && <div>{h.data.reason}</div>}
                 <div className="text-xs text-muted">{dateTime(h.created_at)} · {nameOf(people, h.actor_id)}</div>
               </li>

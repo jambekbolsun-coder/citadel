@@ -19,7 +19,8 @@
 
 ## Структура
 - `supabase/migrations/*.sql` — схема (применены к проекту `cdnveemxxgghhvrydtid`).
-- `supabase/tests/business_rules.sql` — интеграционный тест правил п.27 (откатывается, ожидается `TEST OK`).
+- `supabase/tests/business_rules.sql`, `push_series.sql` — интеграционные тесты (откатываются, ожидается `TEST OK`).
+- `supabase/functions/push-dispatch` — edge-функция Web Push (Deno; вызывается только из БД через pg_net с секретом из Vault). Исключена из tsc/eslint Next.
 - `src/app/(public)`: `/`, `/privacy`; авторизация: `/login`, `/setup`, `/invite/[token]`, `/pending`, `/auth/*`.
 - `src/app/app/**` — рабочее приложение, у каждого модуля `actions.ts` (server actions) + страницы.
 - `src/lib/` — `auth.ts` (сессия и права), `actions.ts` (обёртка действий), `format.ts`, `labels.ts`, `data.ts`.

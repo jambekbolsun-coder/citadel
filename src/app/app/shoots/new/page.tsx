@@ -2,6 +2,7 @@ import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Card, Field, PageHeader } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/action-form";
+import { RecurrenceFields } from "@/components/recurrence-fields";
 import { createShoot } from "../actions";
 
 export const metadata = { title: "Новая съёмка" };
@@ -31,7 +32,8 @@ export default async function NewShoot({ searchParams }: PageProps<"/app/shoots/
           <Field label="Режиссёрские и технические заметки" className="sm:col-span-2"><textarea name="notes" className="input" /></Field>
           <Field label="Одежда, реквизит, оборудование" className="sm:col-span-2"><input name="equipment" className="input" /></Field>
           <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="ambassador_needed" defaultChecked /> Нужен амбассадор</label>
-          <div className="sm:col-span-2"><Submit>Создать и перейти к составу</Submit></div>
+          <div className="sm:col-span-2"><RecurrenceFields startName="starts_at" /></div>
+          <div className="sm:col-span-2"><Submit>Создать и перейти к составу</Submit><p className="mt-2 text-xs text-muted">Для серии откроется первая съёмка — участников можно сразу назначить на все повторы.</p></div>
         </ActionForm>
       </Card>
     </>

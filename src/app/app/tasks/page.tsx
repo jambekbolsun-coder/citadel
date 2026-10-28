@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, Empty, Field, PageHeader, Pager, Tabs } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/action-form";
 import { PeopleSelect } from "@/components/people-select";
+import { RecurrenceFields } from "@/components/recurrence-fields";
 import { activePeople, nameOf, pageRange } from "@/lib/data";
 import { PRIORITY, TASK_STATUS } from "@/lib/labels";
 import { dateTime, overdueText } from "@/lib/format";
@@ -57,6 +58,7 @@ export default async function Tasks({ searchParams }: PageProps<"/app/tasks">) {
             <Field label="Исполнитель"><PeopleSelect name="assignee_id" people={people} defaultValue={s.userId} /></Field>
             <Field label="Проверяющий"><PeopleSelect name="reviewer_id" people={people} /></Field>
             <Field label="Срок"><input name="due_at" type="datetime-local" className="input" /></Field>
+            <RecurrenceFields startName="due_at" />
             <Field label="Приоритет"><select name="priority" defaultValue="normal" className="input">{Object.entries(PRIORITY).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
             <Submit className="w-full">Создать</Submit>
           </ActionForm>
