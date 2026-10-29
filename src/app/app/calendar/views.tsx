@@ -69,7 +69,7 @@ export function MonthMobile({ days, month, today, byDay, statusLabels }: { days:
           })}
         </div>
       </div>
-      <h3 className="group-title mt-4 capitalize">{dayTitle(sel)}</h3>
+      <h3 className="group-title mt-4 first-letter:uppercase">{dayTitle(sel)}</h3>
       <EventList items={byDay[sel] ?? []} statusLabels={statusLabels} />
     </div>
   );

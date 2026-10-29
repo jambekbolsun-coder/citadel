@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
-import { Check } from "lucide-react";
 import { requireActive } from "@/lib/auth";
 import { iconOf } from "@/components/icons";
 import { SettingsPage } from "@/components/settings-list";
 import { availableWorkTabs, defaultWorkTab, resolveWorkTab, WORK_TAB_COOKIE, WORK_TABS } from "@/lib/nav";
 import { setWorkTab } from "../actions";
+import { TabButton } from "./tab-button";
 
 export const metadata = { title: "Раздел в нижней панели" };
 
@@ -22,7 +22,7 @@ export default async function StartTab() {
             const Icon = iconOf(t.icon);
             return (
               <li key={k}>
-                <button name="tab" value={k} className="row w-full text-left" aria-pressed={k === current}>
+                <TabButton value={k} current={k === current}>
                   <span className="row-icon"><Icon size={18} /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">
@@ -31,8 +31,7 @@ export default async function StartTab() {
                     </span>
                     <span className="block text-[13px] text-muted">{t.hint}</span>
                   </span>
-                  <Check size={20} aria-hidden className={k === current ? "text-brand" : "text-transparent"} />
-                </button>
+                </TabButton>
               </li>
             );
           })}

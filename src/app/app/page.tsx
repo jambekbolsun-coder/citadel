@@ -89,7 +89,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
   return (
     <>
       <div className="mb-5">
-        <p className="text-sm capitalize text-muted">{new Intl.DateTimeFormat("ru-RU", { timeZone: "Asia/Bishkek", weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
+        <p className="text-sm text-muted first-letter:uppercase">{new Intl.DateTimeFormat("ru-RU", { timeZone: "Asia/Bishkek", weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
         <h1 className="font-display text-[22px] font-semibold leading-tight md:text-[28px]">{first ? `${first}, добрый день` : "Добрый день"}</h1>
       </div>
       {sp.denied ? <div className="mb-4"><Notice tone="warn">Раздел недоступен для вашей роли.</Notice></div> : null}

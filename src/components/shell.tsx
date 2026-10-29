@@ -196,6 +196,11 @@ export function PlusSheet({ actions }: { actions: PlusAction[] }) {
   const [mode, setMode] = useState<"menu" | "submit">("menu");
   const [opened, setOpened] = useState(0);
   const path = usePathname();
+  const head = useRef<HTMLHeadingElement>(null);
+  // нажатая строка исчезает при смене режима — возвращаем фокус внутрь диалога
+  useEffect(() => {
+    if (ref.current?.open) head.current?.focus();
+  }, [mode]);
   useEffect(() => {
     const open = (e: Event) => {
       setMode((e as CustomEvent).detail === "submit" ? "submit" : "menu");
@@ -228,7 +233,7 @@ export function PlusSheet({ actions }: { actions: PlusAction[] }) {
               <ChevronLeft size={22} />
             </button>
           )}
-          <h2 id="plus-title" className="flex-1 text-lg font-semibold">{mode === "submit" ? "Сдать работу" : "Что сделать?"}</h2>
+          <h2 id="plus-title" ref={head} tabIndex={-1} className="flex-1 text-lg font-semibold outline-none">{mode === "submit" ? "Сдать работу" : "Что сделать?"}</h2>
           <button type="button" className="tap -mr-2 text-muted" onClick={close} aria-label="Закрыть">
             <X size={22} />
           </button>
@@ -239,7 +244,7 @@ export function PlusSheet({ actions }: { actions: PlusAction[] }) {
               const Icon = iconOf(a.icon);
               const body = (
                 <>
-                  <span className={cn("row-icon", a.key === "submit" && "bg-brand text-white")}><Icon size={19} /></span>
+                  <span className={cn("row-icon", a.key === "submit" && "bg-brand! text-white!")}><Icon size={19} /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{a.label}</span>
                     <span className="block truncate text-[13px] text-muted">{a.hint}</span>

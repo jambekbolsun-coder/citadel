@@ -69,7 +69,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/app/cal
       </div>
       <div className="mb-3 flex items-center gap-1">
         <Link href={qs({ date: shift(-1) })} className="tap text-muted" aria-label="Назад"><ChevronLeft size={22} /></Link>
-        <h2 className="min-w-0 flex-1 truncate text-center text-lg font-semibold capitalize sm:flex-none">{title}</h2>
+        <h2 className="min-w-0 flex-1 truncate text-center text-lg font-semibold first-letter:uppercase sm:flex-none">{title}</h2>
         <Link href={qs({ date: shift(1) })} className="tap text-muted" aria-label="Вперёд"><ChevronRight size={22} /></Link>
         <Link href={qs({ date: today })} className="ml-1 inline-flex min-h-9 items-center rounded-xl bg-surface px-3 text-sm font-semibold ring-1 ring-line">Сегодня</Link>
       </div>

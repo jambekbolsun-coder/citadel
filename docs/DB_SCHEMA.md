@@ -18,6 +18,7 @@
 - `v_account_balances` — opening + inflow − outflow по каждому счёту (сверка).
 
 ## Ключевые функции (RPC)
+- `calendar_year_summary(from, to, project, person)` — счётчики календаря по месяцам (security invoker, учитывает RLS), миграция 0011. Там же индексы под фильтры мобильных экранов.
 `claim_first_owner`, `create_invite`/`reissue_invite`/`revoke_invite`/`invite_preview`/`accept_invite`, `set_device_pin`/`verify_device_pin`, `submit_lead`, `lead_take`/`lead_set_stage`/`lead_convert`/`lead_mark_opened`, `new_tariff_version`, `publish_site`/`restore_site_version`, `project_set_status`, `launch_project`, `create_period`, `generate_period_plan`, `approve_period_plan`, `close_period`, `content_assign`, `content_transition`, `task_transition`, `task_reschedule`, `shoot_set_participant` (проверка конфликтов), `shoot_respond`, `shoot_reschedule`, `secret_create`/`secret_reveal`/`secret_delete` (Vault + свежий вход), `payment_confirm`/`payment_reject`, `expense_confirm`/`expense_cancel`, `payroll_compute`/`payroll_approve`/`salary_pay`, `run_reminders` (cron), `content_reschedule`, `series_cancel`, Web Push: `push_subscribe`/`push_public_key`/`push_test` (пользователь), `push_config`/`push_init_vapid`/`push_claim`/`push_result` (только service_role — edge-функция), `push_kick` (pg_net, триггер на notifications + cron раз в минуту).
 
 ## Защитные триггеры
