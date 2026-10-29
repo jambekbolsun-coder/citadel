@@ -179,6 +179,7 @@ export function titleFor(path: string): string {
     "/app/finance/expense": "Новый расход",
     "/app/projects/new": "Новый проект",
     "/app/shoots/new": "Новая съёмка",
+    "/app/reports/speed": "Скорость",
   };
   if (exact[path]) return exact[path];
   const item = [...NAV].sort((a, b) => b.href.length - a.href.length).find((i) => i.href !== "/app" && (path === i.href || path.startsWith(i.href + "/")));

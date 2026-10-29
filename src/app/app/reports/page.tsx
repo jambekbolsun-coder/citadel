@@ -21,7 +21,7 @@ export default async function Reports({ searchParams }: PageProps<"/app/reports"
   return (
     <>
       <PageHeader title="Отчёты" subtitle="Счётчики считаются из договорных планов и фактов, а не из карточек интерфейса"
-        actions={<a href="/app/finance/export?type=planfact" className="rounded-xl bg-surface-2 px-3 py-2 text-sm font-semibold ring-1 ring-line">CSV план-факт</a>} />
+        actions={<>{s.can("reports.view") && <Link href="/app/reports/speed" className="inline-flex min-h-11 items-center rounded-xl bg-surface-2 px-3 text-sm font-semibold ring-1 ring-line">Скорость приложения</Link>}<a href="/app/finance/export?type=planfact" className="inline-flex min-h-11 items-center rounded-xl bg-surface-2 px-3 text-sm font-semibold ring-1 ring-line">CSV план-факт</a></>} />
       <Tabs active={tab} items={[{ key: "planfact", label: "План-факт по проектам", href: "/app/reports" }, { key: "people", label: "Исполнители", href: `/app/reports?tab=people&from=${from}&to=${to}` }, ...(s.can("finance.view") ? [{ key: "finance", label: "Финансы", href: "/app/finance?tab=overview" }] : [])]} />
       {tab === "planfact" && <PlanFact />}
       {tab === "people" && (

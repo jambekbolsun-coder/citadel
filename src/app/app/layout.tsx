@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { plusActions, resolveWorkTab, visibleNav, WORK_TAB_COOKIE, WORK_TABS } from "@/lib/nav";
 import { AppHeader, BottomNav, PlusSheet, Sidebar } from "@/components/shell";
 import { PinLock } from "@/components/pin-lock";
+import { WebVitals } from "@/components/web-vitals";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
       <BottomNav tab={{ href: tab.href, label: tab.label, icon: tab.icon, match: tab.match }} />
       <PlusSheet actions={plusActions(s)} />
       <PinLock userId={s.userId} />
+      <WebVitals />
     </div>
   );
 }
