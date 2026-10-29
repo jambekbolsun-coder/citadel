@@ -8,9 +8,10 @@ import { archive, markAllRead, markRead } from "./actions";
 
 export const metadata = { title: "Уведомления" };
 
-function hrefOf(t: string | null, id: string | null) {
+function hrefOf(t: string | null, id: string | null, type?: string) {
+  if (type === "employee.approved") return "/app"; // уведомление самому сотруднику — ведём в его кабинет
   if (!t || !id) return "/app";
-  return { lead: `/app/leads/${id}`, project: `/app/projects/${id}`, content: `/app/content/${id}`, task: `/app/tasks/${id}`, shoot: `/app/shoots/${id}`, profile: `/app/team/${id}`, payroll: "/app/payroll", period: "/app/projects" }[t] ?? "/app";
+  return { lead: `/app/leads/${id}`, project: `/app/projects/${id}`, content: `/app/content/${id}`, task: `/app/tasks/${id}`, shoot: `/app/shoots/${id}`, profile: `/app/team/${id}`, campaign: `/app/campaigns/${id}`, payroll: "/app/payroll", period: "/app/projects" }[t] ?? "/app";
 }
 
 export default async function Notifications({ searchParams }: PageProps<"/app/notifications">) {
@@ -43,7 +44,7 @@ export default async function Notifications({ searchParams }: PageProps<"/app/no
             <Card key={day} title={day}>
               <ul className="divide-y divide-line">{list.map((n) => (
                 <li key={n.id} className={cn("flex items-start justify-between gap-3 py-3", !n.read_at && "font-semibold")}>
-                  <Link href={hrefOf(n.entity_type, n.entity_id)} className="min-w-0 flex-1">
+                  <Link href={hrefOf(n.entity_type, n.entity_id, n.type)} className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">{!n.read_at && <span className="h-2 w-2 rounded-full bg-brand" />}{n.title}{n.priority === "critical" && <Badge tone="bad">срочно</Badge>}</div>
                     {n.body && <div className="mt-0.5 text-sm font-normal text-muted">{n.body}</div>}
                     <div className="mt-0.5 text-xs font-normal text-muted">{dateTime(n.created_at)}</div>

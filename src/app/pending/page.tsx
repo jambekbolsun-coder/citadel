@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { logout } from "@/app/auth-actions";
 import { Notice, btn } from "@/components/ui";
 import Link from "next/link";
+import { AutoCheck } from "./auto-check";
 
 export const metadata = { title: "Ожидание доступа" };
 
@@ -23,11 +24,12 @@ export default async function Pending({ searchParams }: PageProps<"/pending">) {
       ) : (
         <div className="space-y-3">
           {sp.joined ? <Notice tone="good">Вы присоединились к SMM KADR. Установите приложение на телефон.</Notice> : null}
-          <Notice>Владелец проверит профиль и откроет доступ. До утверждения данные компании недоступны.</Notice>
+          <Notice>Владелец проверит профиль и откроет доступ. До утверждения данные компании недоступны. Страница сама проверяет статус — заново регистрироваться не нужно.</Notice>
+          <AutoCheck />
         </div>
       )}
       <div className="mt-5 flex gap-2">
-        <Link href="/pending" className={btn("secondary")}>Проверить снова</Link>
+        <Link href="/pending" className={btn("secondary")}>Проверить доступ</Link>
         <form action={logout}><button className={btn("ghost")}>Выйти</button></form>
       </div>
     </AuthShell>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Avatar, Badge, Card, Field, PageHeader, Tabs } from "@/components/ui";
+import { Avatar, Badge, Card, Empty, Field, LoadError, PageHeader, Tabs } from "@/components/ui";
 import { ActionForm } from "@/components/action-form";
 import { PeopleSelect } from "@/components/people-select";
 import { activePeople } from "@/lib/data";
@@ -19,9 +19,9 @@ export default async function Team({ searchParams }: PageProps<"/app/team">) {
   const supabase = await createClient();
   const tab = typeof sp.tab === "string" ? sp.tab : "people";
   const status = typeof sp.status === "string" ? sp.status : "";
-  let q = supabase.from("profiles").select("id,full_name,email,job_title,status,avatar_url,departments(name),user_roles!user_roles_user_id_fkey(role_code)").order("full_name");
+  let q = supabase.from("profiles").select("id,full_name,email,job_title,status,avatar_url,departments!profiles_department_id_fkey(name),user_roles!user_roles_user_id_fkey(role_code)").order("full_name");
   if (status) q = q.eq("status", status);
-  const [{ data: profiles }, { data: invites }, { data: roles }, { data: deps }, people] = await Promise.all([
+  const [{ data: profiles, error: profilesError }, { data: invites }, { data: roles }, { data: deps }, people] = await Promise.all([
     q,
     s.can("employees.invite") ? supabase.from("employee_invites").select("id,full_name,email,job_title,status,expires_at,created_at,used_at").order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
     supabase.from("roles").select("code,name").neq("code", "owner").order("sort"),
@@ -38,9 +38,10 @@ export default async function Team({ searchParams }: PageProps<"/app/team">) {
 
       {tab === "people" && (
         <>
-          <div className="mb-3 flex gap-2 text-sm">
+          <div className="mb-3 flex flex-wrap gap-2 text-sm">
             {["", "active", "pending_approval", "blocked"].map((st) => <Link key={st} href={`/app/team?status=${st}`} className={`rounded-xl px-3 py-1.5 ${status === st ? "bg-surface font-semibold ring-1 ring-line" : "text-muted"}`}>{st ? STATUS[st] : "Все"}</Link>)}
           </div>
+          {profilesError ? <LoadError retry={`/app/team?status=${status}`} /> : rows.length === 0 ? <Empty title={status ? "Нет сотрудников с таким статусом" : "Сотрудников пока нет"} text="Новые сотрудники появляются здесь после принятия QR-приглашения." /> : null}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {rows.map((p) => (
               <Link key={p.id} href={`/app/team/${p.id}`} className="flex gap-3 rounded-2xl border border-line bg-surface p-4 hover:border-primary">

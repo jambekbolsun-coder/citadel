@@ -36,11 +36,28 @@ export function allowed(v: Viewer, href: string) {
   return !item?.perms || item.perms.some((p) => v.can(p));
 }
 
+// Вложенные экраны со своим правом (не совпадают с правом раздела)
+const SUBPAGE_PERMS: Record<string, string[]> = {
+  "/app/finance/expense": ["expenses.create"],
+  "/app/campaigns/new": ["campaigns.manage"],
+  "/app/projects/new": ["projects.create"],
+  "/app/shoots/new": ["shoots.manage", "projects.manage"],
+};
+
+/** Можно ли показать ссылку на адрес (в том числе вложенный): ближайший раздел меню + особые права подстраниц. */
+export function canOpen(v: Viewer, href: string) {
+  const path = href.split(/[?#]/)[0];
+  if (SUBPAGE_PERMS[path]) return SUBPAGE_PERMS[path].some((p) => v.can(p));
+  const item = [...NAV].sort((a, b) => b.href.length - a.href.length).find((i) => i.href !== "/app" && (path === i.href || path.startsWith(i.href + "/")));
+  return !item?.perms || item.perms.some((p) => v.can(p));
+}
+
 // ───────── 4-я позиция нижней панели: рабочий раздел под роль ─────────
-export type WorkTabKey = "tasks" | "work" | "reports" | "finance";
+export type WorkTabKey = "tasks" | "work" | "ads" | "reports" | "finance";
 export const WORK_TABS: Record<WorkTabKey, { href: string; label: string; icon: string; match: string[]; hint: string }> = {
   tasks: { href: "/app/today", label: "Задачи", icon: "check", match: ["/app/today", "/app/tasks", "/app/content"], hint: "Мои задачи и материалы на сегодня и неделю" },
   work: { href: "/app/projects", label: "Работа", icon: "folder", match: ["/app/projects", "/app/shoots", "/app/content", "/app/checks"], hint: "Проекты, производство и съёмки" },
+  ads: { href: "/app/campaigns", label: "Реклама", icon: "megaphone", match: ["/app/campaigns"], hint: "Мои рекламные проекты, видео и расходы" },
   reports: { href: "/app/reports", label: "Отчёты", icon: "chart", match: ["/app/reports"], hint: "План-факт, финансы и загрузка компании" },
   finance: { href: "/app/finance", label: "Финансы", icon: "wallet", match: ["/app/finance", "/app/payroll"], hint: "Платежи, долги, расходы и выплаты" },
 };
@@ -49,6 +66,7 @@ const PRODUCTION_ROLES = ["creative_director", "project_manager", "planning_dire
 
 export function availableWorkTabs(v: Viewer): WorkTabKey[] {
   const out: WorkTabKey[] = ["tasks", "work"];
+  if (allowed(v, "/app/campaigns")) out.push("ads");
   if (allowed(v, "/app/reports")) out.push("reports");
   if (allowed(v, "/app/finance")) out.push("finance");
   return out;
@@ -59,6 +77,7 @@ export function defaultWorkTab(v: Viewer): WorkTabKey {
   if ((v.isOwner || v.roles.includes("manager")) && av.includes("reports")) return "reports";
   if (v.roles.includes("accountant") && av.includes("finance")) return "finance";
   if (v.roles.some((r) => PRODUCTION_ROLES.includes(r))) return "work";
+  if (v.roles.includes("targetologist") && av.includes("ads")) return "ads";
   return "tasks";
 }
 
@@ -80,6 +99,7 @@ export function plusActions(v: Viewer): PlusAction[] {
     (v.can("shoots.manage") || v.can("projects.manage")) && { key: "shoot", label: "Запланировать съёмку", hint: "Дата, место, участники", icon: "camera", href: "/app/shoots/new" },
     v.can("projects.create") && { key: "project", label: "Добавить проект", hint: "Мастер договора и плана", icon: "folder", href: "/app/projects/new" },
     v.can("employees.invite") && { key: "invite", label: "Пригласить сотрудника", hint: "QR-приглашение и условия оплаты", icon: "userplus", href: "/app/team?tab=invite" },
+    v.can("campaigns.manage") && { key: "ads", label: "Записать расход рекламы", hint: "Кампания, видео, сумма USD/KGS", icon: "megaphone", href: "/app/campaigns" },
     v.can("expenses.create") && { key: "expense", label: "Добавить расход", hint: "Сумма, категория, чек", icon: "receipt", href: "/app/finance/expense" },
     v.can("clients.manage") && { key: "client", label: "Добавить клиента", hint: "Компания и контакты", icon: "users", href: "/app/clients#new" },
     allowed(v, "/app/leads") && { key: "lead", label: "Новая заявка", hint: "Звонок или обращение вручную", icon: "inbox", href: "/app/leads#new" },
@@ -152,7 +172,14 @@ export function settingsGroups(v: Viewer): SettingsGroup[] {
     has("/app/audit") && { href: "/app/audit", label: "Журнал аудита", icon: "scroll" },
   ]);
   if (company.length) groups.push({ title: "Компания и управление", rows: company });
-  groups.push({ title: "Помощь", rows: [{ href: "/privacy", label: "Политика конфиденциальности", icon: "file" }] });
+  groups.push({
+    title: "Помощь",
+    rows: [
+      { href: "/app/help", label: "Инструкции · как пользоваться", icon: "book" },
+      { href: "/app/help/about", label: "О приложении и авторе", icon: "info" },
+      { href: "/privacy", label: "Политика конфиденциальности", icon: "file" },
+    ],
+  });
   return groups;
 }
 
@@ -180,8 +207,12 @@ export function titleFor(path: string): string {
     "/app/projects/new": "Новый проект",
     "/app/shoots/new": "Новая съёмка",
     "/app/reports/speed": "Скорость",
+    "/app/campaigns/new": "Новая кампания",
+    "/app/help": "Инструкции",
+    "/app/help/about": "О приложении",
   };
   if (exact[path]) return exact[path];
+  if (path.startsWith("/app/help/")) return "Инструкции";
   const item = [...NAV].sort((a, b) => b.href.length - a.href.length).find((i) => i.href !== "/app" && (path === i.href || path.startsWith(i.href + "/")));
   return item?.label ?? "Цитадель";
 }
@@ -189,6 +220,7 @@ export function titleFor(path: string): string {
 /** Куда ведёт «Назад» с вложенного экрана; null — экран верхнего уровня. */
 export function backFor(path: string): string | null {
   const parts = path.split("/").filter(Boolean);
+  if (parts[1] === "help") return parts.length > 2 ? "/app/help" : "/app/settings";
   if (parts.length <= 2) return null;
   if (parts[1] === "settings") return "/app/settings";
   if (parts[1] === "reports" && parts[2] === "client") return "/app/reports";

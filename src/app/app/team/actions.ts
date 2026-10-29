@@ -56,18 +56,18 @@ export const revokeInvite = action(async (fd) => {
   return "Приглашение отозвано";
 });
 
+// Права, допустимые переходы, «ровно одна строка», уведомление и задача на отзыв доступов — в RPC employee_set_status
 export const setEmployeeStatus = action(async (fd) => {
   const supabase = await createClient();
+  const id = str(fd, "id");
   const status = str(fd, "status");
-  check(await supabase.from("profiles").update({ status }).eq("id", str(fd, "id")));
-  if (status === "blocked") {
-    // Обязательная задача по отзыву внешних доступов при увольнении/блокировке
-    const { data: u } = await supabase.auth.getUser();
-    const { data: p } = await supabase.from("profiles").select("full_name").eq("id", str(fd, "id")).single();
-    await supabase.from("tasks").insert({ title: `Отозвать внешние доступы: ${p?.full_name}`, description: "Сотрудник заблокирован. Отзовите доступы к рекламным кабинетам, соцсетям клиентов и общим ресурсам; смените пароли, которые он знал.", priority: "critical", type: "offboarding", assignee_id: u.user!.id, created_by: u.user!.id, due_at: new Date(Date.now() + 86400_000).toISOString() });
-  }
-  revalidatePath(`/app/team/${str(fd, "id")}`);
-  return status === "active" ? "Доступ открыт" : "Доступ закрыт. Создана задача на отзыв внешних доступов.";
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Некорректный идентификатор сотрудника");
+  const r = check(await supabase.rpc("employee_set_status", { p_id: id, p_status: status, p_reason: opt(fd, "reason") })) as { id: string; status: string; changed: boolean };
+  if (r?.id !== id || r.status !== status) throw new Error("Сервер не подтвердил изменение статуса — обновите страницу и проверьте ещё раз");
+  revalidatePath(`/app/team/${id}`);
+  revalidatePath("/app/team");
+  if (!r.changed) return status === "active" ? "Доступ уже открыт — повторно ничего не меняли" : "Сотрудник уже заблокирован";
+  return status === "active" ? "Доступ открыт. Сотрудник получил уведомление." : "Доступ закрыт, устройства сброшены. Создана задача на отзыв внешних доступов.";
 });
 
 export const updateEmployee = action(async (fd) => {

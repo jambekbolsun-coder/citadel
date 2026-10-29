@@ -8,6 +8,15 @@ export function money(minor: number | string | bigint | null | undefined, curren
   return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(n)} ${sym}`;
 }
 
+/** Суммы в разных валютах — раздельно («75 USD · 3 000 сом»), никогда не складываются. Пусто → «—» или empty. */
+export function moneyMulti(m: Record<string, number> | null | undefined, empty = "—") {
+  const parts = Object.entries(m ?? {})
+    .filter(([, v]) => v !== 0)
+    .sort(([a], [b]) => (a === "KGS" ? 1 : b === "KGS" ? -1 : a.localeCompare(b)))
+    .map(([c, v]) => money(v, c));
+  return parts.length ? parts.join(" · ") : empty;
+}
+
 /** "15 000,50" → 1500050. Только целочисленная арифметика, без float. */
 export function parseMoney(input: FormDataEntryValue | null | undefined): number | null {
   if (input === null || input === undefined) return null;

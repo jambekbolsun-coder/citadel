@@ -12,13 +12,13 @@ export function cn(...a: Parameters<typeof clsx>) {
 export function PageHeader({ title, subtitle, actions, back }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; back?: string }) {
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-[16rem]">
         {back && (
           <Link href={back} className="mb-1 hidden text-sm text-muted hover:text-ink md:inline-block">
             ← Назад
           </Link>
         )}
-        <h1 className="font-display text-[22px] font-semibold leading-tight tracking-tight [overflow-wrap:anywhere] md:text-[28px]">{title}</h1>
+        <h1 className="font-display text-[22px] font-semibold leading-tight tracking-tight [overflow-wrap:break-word] md:text-[28px]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -101,6 +101,20 @@ export function Empty({ title, text, action }: { title: string; text?: string; a
       <div className="font-semibold">{title}</div>
       {text && <p className="mx-auto mt-1 max-w-md text-sm text-muted">{text}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
+    </div>
+  );
+}
+
+/** Ошибка чтения данных или отказ в правах — не «пусто» и не 404. Текст без внутренних деталей БД. */
+export function LoadError({ kind = "error", title, text, retry, back, backLabel = "Назад" }: { kind?: "error" | "denied"; title?: string; text?: string; retry?: string; back?: string; backLabel?: string }) {
+  return (
+    <div role="alert" className="rounded-2xl border border-line bg-surface px-6 py-10 text-center">
+      <div className="font-semibold">{title ?? (kind === "denied" ? "Недостаточно прав" : "Не удалось загрузить данные")}</div>
+      <p className="mx-auto mt-1 max-w-md text-sm text-muted">{text ?? (kind === "denied" ? "У вашей роли нет доступа к этим сведениям. Обратитесь к руководителю, если доступ нужен для работы." : "Сервер не ответил или вернул ошибку. Данные не потеряны — попробуйте ещё раз.")}</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {retry && <a href={retry} className={btn("secondary")}>Повторить</a>}
+        {back && <a href={back} className={btn("ghost")}>{backLabel}</a>}
+      </div>
     </div>
   );
 }

@@ -270,10 +270,14 @@ export const addPayment = action(async (fd) => {
   const { data: u } = await supabase.auth.getUser();
   const amount = parseMoney(fd.get("amount"));
   if (!amount) throw new Error("Укажите сумму");
+  // платёж по счёту — в валюте счёта (иначе БД отклонит, 0015)
+  const invoiceId = opt(fd, "invoice_id");
+  const { data: inv } = invoiceId ? await supabase.from("invoices").select("currency").eq("id", invoiceId).maybeSingle() : { data: null };
   check(
     await supabase.from("payments").insert({
       project_id: str(fd, "id"),
-      invoice_id: opt(fd, "invoice_id"),
+      invoice_id: invoiceId,
+      currency: inv?.currency ?? "KGS",
       kind: str(fd, "kind") || "payment",
       amount_minor: amount,
       paid_on: str(fd, "paid_on") || new Date().toISOString().slice(0, 10),
@@ -309,6 +313,7 @@ export const createSecret = action(async (fd) => {
   if (!value) throw new Error("Введите значение");
   check(await supabase.rpc("secret_create", { p_project: str(fd, "id"), p_label: str(fd, "label"), p_platform: str(fd, "platform"), p_login_hint: str(fd, "login_hint"), p_value: value }));
   rp(str(fd, "id"));
+  revalidatePath("/app/campaigns", "layout");
   return "Доступ сохранён в зашифрованном хранилище";
 });
 
@@ -322,6 +327,7 @@ export const deleteSecret = action(async (fd) => {
   const supabase = await createClient();
   check(await supabase.rpc("secret_delete", { p_secret: str(fd, "secret_id") }));
   rp(str(fd, "id"));
+  revalidatePath("/app/campaigns", "layout");
   return "Доступ удалён";
 });
 

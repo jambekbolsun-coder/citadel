@@ -1,71 +1,119 @@
 import Link from "next/link";
+import { ChevronRight, MessageCircle, Phone, Plus } from "lucide-react";
 import { requireActive } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, Empty, Field, PageHeader } from "@/components/ui";
-import { ActionForm, Submit } from "@/components/action-form";
-import { PeopleSelect } from "@/components/people-select";
+import { Badge, Empty, LoadError, Notice, PageHeader, Stat, btn, cn } from "@/components/ui";
 import { activePeople, nameOf } from "@/lib/data";
-import { date, money } from "@/lib/format";
-import { createCampaign } from "./actions";
+import { date, moneyMulti, todayLocal } from "@/lib/format";
+import { daysBetween } from "@/lib/ads-math";
+import { CAMPAIGN_STATUS, loadAdProjects, periodOf, statusTone, telLink, waLink } from "./data";
+import { PeriodChips } from "./period-chips";
 
-export const metadata = { title: "Реклама" };
+export const metadata = { title: "Мои рекламные проекты" };
 
-export default async function Campaigns() {
+const STATUS_FILTERS = [
+  { key: "work", label: "В работе" },
+  { key: "active", label: "Работает" },
+  { key: "paused", label: "Пауза" },
+  { key: "all", label: "Все" },
+];
+
+export default async function Campaigns({ searchParams }: PageProps<"/app/campaigns">) {
+  const sp = await searchParams;
   const s = await requireActive(["campaigns.manage", "campaigns.view_all"]);
-  const supabase = await createClient();
-  const [{ data }, people, { data: projects }] = await Promise.all([
-    supabase.from("campaigns").select("id,name,platform,status,budget_minor,currency,owner_id,starts_on,ends_on,target_leads,projects(name),campaign_metrics(spend_minor,leads)").order("created_at", { ascending: false }),
-    activePeople(),
-    supabase.from("projects").select("id,name").eq("status", "in_progress").order("name"),
-  ]);
-  const rows = (data ?? []) as unknown as { id: string; name: string; platform: string; status: string; budget_minor: number; currency: string; owner_id: string | null; starts_on: string | null; ends_on: string | null; target_leads: number | null; projects: { name: string } | null; campaign_metrics: { spend_minor: number; leads: number }[] }[];
+  const all = s.can("campaigns.view_all");
+  const period = periodOf(sp);
+  const status = typeof sp.status === "string" ? sp.status : "work";
+  const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 80) : "";
+  const owner = all && typeof sp.owner === "string" && /^[0-9a-f-]{36}$/i.test(sp.owner) ? sp.owner : null;
+  const [res, people] = await Promise.all([loadAdProjects({ period, owner, status, q }), activePeople()]);
+  const today = todayLocal();
+  const qs = (patch: Record<string, string>) => {
+    const p = new URLSearchParams({ period: period.key, status, ...(q ? { q } : {}), ...(owner ? { owner } : {}), ...(period.key === "custom" ? { from: period.from, to: period.to } : {}), ...patch });
+    return `/app/campaigns?${p}`;
+  };
+
   return (
     <>
-      <PageHeader title="Таргетированная реклама" subtitle="Бюджет клиента — отдельный контур, не выручка агентства. Автоимпорт из рекламных кабинетов пока не подключён — данные вводятся вручную." />
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        {rows.length === 0 ? <Empty title="Кампаний нет" /> : (
-          <Card className="p-0 md:p-0"><div className="scroll-x"><table className="tbl">
-            <thead><tr><th>Кампания</th><th>Статус</th><th>Бюджет</th><th>Расход</th><th>Обращения</th><th>CPL</th><th>Таргетолог</th></tr></thead>
-            <tbody>{rows.map((c) => {
-              const spend = c.campaign_metrics.reduce((a, m) => a + Number(m.spend_minor), 0);
-              const leads = c.campaign_metrics.reduce((a, m) => a + m.leads, 0);
-              return (
-                <tr key={c.id}>
-                  <td><Link href={`/app/campaigns/${c.id}`} className="font-semibold hover:underline">{c.name}</Link><div className="text-xs text-muted">{c.projects?.name} · {c.platform} · {date(c.starts_on)}–{date(c.ends_on)}</div></td>
-                  <td><Badge status={c.status === "active" ? "in_progress" : c.status}>{{ draft: "Черновик", active: "Активна", paused: "Пауза", finished: "Завершена" }[c.status]}</Badge></td>
-                  <td>{money(c.budget_minor, c.currency)}</td><td>{money(spend, c.currency)}</td>
-                  <td>{leads}{c.target_leads ? ` / ориентир ${c.target_leads}` : ""}</td>
-                  <td>{leads >= 5 ? money(Math.round(spend / leads), c.currency) : <span className="text-xs text-muted">мало данных</span>}</td>
-                  <td className="text-sm">{nameOf(people, c.owner_id)}</td>
-                </tr>
-              );
-            })}</tbody>
-          </table></div></Card>
-        )}
-        {s.can("campaigns.manage") && (
-          <Card title="Новая кампания">
-            <ActionForm action={createCampaign} className="space-y-3">
-              <Field label="Проект *"><select name="project_id" required className="input"><option value="">—</option>{(projects ?? []).map((p: { id: string; name: string }) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
-              <Field label="Название"><input name="name" className="input" /></Field>
-              <Field label="Платформа"><select name="platform" className="input"><option value="meta">Meta (Instagram/Facebook)</option><option value="google">Google</option><option value="tiktok">TikTok</option><option value="other">Другое</option></select></Field>
-              <Field label="Цель и целевой лид"><input name="goal" className="input" /></Field>
-              <div className="grid grid-cols-2 gap-2">
-                <Field label="Бюджет"><input name="budget" inputMode="decimal" className="input" /></Field>
-                <Field label="Валюта"><select name="currency" className="input"><option>USD</option><option>KGS</option></select></Field>
-                <Field label="Начало"><input name="starts_on" type="date" className="input" /></Field>
-                <Field label="Окончание"><input name="ends_on" type="date" className="input" /></Field>
-                <Field label="Ориентир обращений"><input name="target_leads" type="number" className="input" /></Field>
-                <Field label="Проверка, дн."><input name="check_every_days" type="number" defaultValue={2} className="input" /></Field>
-              </div>
-              <Field label="ID рекламного кабинета"><input name="ad_account_id" className="input" /></Field>
-              <Field label="Пиксель / аналитика"><input name="pixel" className="input" /></Field>
-              <Field label="Таргетолог"><PeopleSelect name="owner_id" people={people} defaultValue={s.userId} /></Field>
-              <Submit className="w-full">Создать</Submit>
-            </ActionForm>
-            <p className="mt-2 text-xs text-muted">Ориентир по обращениям не является гарантией результата.</p>
-          </Card>
-        )}
-      </div>
+      <PageHeader
+        title={all ? "Рекламные проекты" : "Мои проекты"}
+        subtitle="Ручной учёт рекламы: статусы и расходы вносит сотрудник. Интеграций с рекламными кабинетами нет — Цитадель ничего не включает и не выключает на площадках."
+        actions={s.can("campaigns.manage") ? <Link href="/app/campaigns/new" className={btn("primary")}><Plus size={18} />Кампания</Link> : null}
+      />
+      {res.error ? (
+        <LoadError retry={qs({})} />
+      ) : (
+        <>
+          <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Stat label="Проектов в работе" value={res.totals!.projectsInWork} />
+            <Stat label="Кампаний работает" value={res.totals!.active} tone={res.totals!.active ? "good" : undefined} />
+            <Stat label="Кампаний на паузе" value={res.totals!.paused} tone={res.totals!.paused ? "warn" : undefined} />
+            <Stat label={`Потрачено · ${period.label}`} value={<span className="block break-words text-xl leading-snug">{moneyMulti(res.totals!.spend, "0")}</span>} hint="факт из журнала, валюты раздельно" />
+          </div>
+
+          <form className="mb-3 flex flex-wrap gap-2" role="search">
+            <input type="hidden" name="period" value={period.key} />
+            <input type="hidden" name="status" value={status} />
+            {period.key === "custom" && <><input type="hidden" name="from" value={period.from} /><input type="hidden" name="to" value={period.to} /></>}
+            <input name="q" defaultValue={q} placeholder="Клиент, ниша, кампания" aria-label="Поиск по рекламным проектам" className="input min-w-0 flex-1 basis-[12rem]" />
+            {all && (
+              <select name="owner" defaultValue={owner ?? ""} aria-label="Таргетолог" className="input min-w-0 flex-1 basis-[10rem]">
+                <option value="">Все таргетологи</option>
+                {people.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+              </select>
+            )}
+            <button className={btn("secondary", "shrink-0")}>Найти</button>
+          </form>
+          <div className="mb-3 flex flex-wrap gap-2 text-sm">
+            {STATUS_FILTERS.map((f) => (
+              <Link key={f.key} href={qs({ status: f.key })} aria-current={status === f.key ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-xl px-3", status === f.key ? "bg-surface font-semibold ring-1 ring-line" : "text-muted")}>{f.label}</Link>
+            ))}
+          </div>
+          <PeriodChips base="/app/campaigns" params={{ status, ...(q ? { q } : {}), ...(owner ? { owner } : {}) }} period={period} />
+
+          {res.cards.length === 0 ? (
+            <Empty
+              title={q || status !== "work" ? "Ничего не найдено" : all ? "Рекламных проектов пока нет" : "Вам пока не назначены рекламные проекты"}
+              text={all ? "Создайте кампанию в проекте клиента и назначьте таргетолога — проект появится у него в «Моих проектах»." : "Когда руководитель назначит вас таргетологом проекта или кампании, они появятся здесь."}
+            />
+          ) : (
+            <ul className="grid gap-3 lg:grid-cols-2">
+              {res.cards.map((c) => {
+                const single = c.campaigns.length === 1;
+                const href = single ? `/app/campaigns/${c.campaigns[0].id}` : `/app/campaigns/project/${c.projectId}`;
+                const tel = telLink(c.client?.phone);
+                const wa = waLink(c.client?.phone);
+                const age = c.startedOn ? daysBetween(c.startedOn, today) + 1 : null;
+                return (
+                  <li key={c.projectId} className={cn("rounded-[20px] border bg-surface p-4", c.overdueCheck ? "border-warn" : "border-line")}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link href={href} className="block break-words font-semibold leading-snug hover:underline">{c.client?.company_name ?? c.projectName}</Link>
+                        <p className="mt-0.5 text-[13px] text-muted">{[c.client?.niche, c.client?.company_name && c.client.company_name !== c.projectName ? c.projectName : null].filter(Boolean).join(" · ") || "ниша не указана"}</p>
+                      </div>
+                      <Badge tone={statusTone(c.status)}>{CAMPAIGN_STATUS[c.status]}</Badge>
+                    </div>
+                    <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                      <div><dt className="text-xs text-muted">План в день</dt><dd className="font-semibold">{moneyMulti(c.dailyPlan, "не задан")}</dd></div>
+                      <div><dt className="text-xs text-muted">Потрачено · {period.label}</dt><dd className="font-semibold">{moneyMulti(c.spend, "0")}</dd></div>
+                      <div><dt className="text-xs text-muted">Работает</dt><dd>{age ? `${age} дн. · с ${date(c.startedOn)}` : "ещё не запускалась"}</dd></div>
+                      <div><dt className="text-xs text-muted">Активных видео</dt><dd>{c.activeCreatives}</dd></div>
+                      <div><dt className="text-xs text-muted">Проверка</dt><dd className={c.overdueCheck ? "font-semibold text-warn" : ""}>{c.nextCheck ? (c.overdueCheck ? `пора (${date(c.nextCheck)})` : date(c.nextCheck)) : "—"}</dd></div>
+                      <div><dt className="text-xs text-muted">Кампаний</dt><dd>{c.campaigns.length}{all ? ` · ${[...new Set(c.campaigns.map((k) => nameOf(people, k.owner_id)))].join(", ")}` : ""}</dd></div>
+                    </dl>
+                    {c.client?.contact_name && <p className="mt-3 truncate text-sm"><span className="text-muted">Контакт:</span> {c.client.contact_name}</p>}
+                    <div className="mt-3 flex gap-2">
+                      {tel && <a href={tel} className={btn("secondary", "w-11 px-0")} aria-label={`Позвонить ${c.client?.contact_name ?? "клиенту"}`}><Phone size={18} /></a>}
+                      {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className={btn("secondary", "w-11 px-0")} aria-label="Открыть чат WhatsApp"><MessageCircle size={18} /></a>}
+                      <Link href={href} className={btn("primary", "flex-1")}>Открыть<ChevronRight size={18} /></Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="mt-4"><Notice>«Бюджет в день» — плановый лимит, не расход. «Потрачено» — только суммы, записанные в журнал. Бюджет клиента не является выручкой агентства.</Notice></div>
+        </>
+      )}
     </>
   );
 }

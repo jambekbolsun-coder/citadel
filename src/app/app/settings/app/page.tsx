@@ -2,6 +2,7 @@ import { requireActive } from "@/lib/auth";
 import { Card } from "@/components/ui";
 import { SettingsPage } from "@/components/settings-list";
 import { InstallButton } from "@/components/pwa";
+import { APP_VERSION } from "@/lib/version";
 
 export const metadata = { title: "Приложение" };
 
@@ -17,7 +18,7 @@ export default async function AppInfo() {
         <Card title="О приложении">
           <dl className="grid gap-2 text-sm">
             <div className="flex justify-between gap-3"><dt className="text-muted">Название</dt><dd>Цитадель · SMM KADR</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-muted">Версия</dt><dd>0.3</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted">Версия</dt><dd>{APP_VERSION}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">Данные</dt><dd className="text-right">Приватные страницы не сохраняются в кэше устройства</dd></div>
           </dl>
         </Card>

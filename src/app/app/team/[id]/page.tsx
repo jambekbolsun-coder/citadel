@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Avatar, Badge, Card, Field, Notice, PageHeader } from "@/components/ui";
+import { Avatar, Badge, Card, Field, LoadError, Notice, PageHeader } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/action-form";
 import { PeopleSelect } from "@/components/people-select";
 import { activePeople, nameOf } from "@/lib/data";
@@ -10,12 +10,25 @@ import { date, money } from "@/lib/format";
 import { SalaryFields } from "../salary-fields";
 import { addSalaryTerms, setEmployeeStatus, setPerms, setRoles, updateEmployee } from "../actions";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function Employee({ params }: PageProps<"/app/team/[id]">) {
   const { id } = await params;
   const s = await requireActive(["employees.view", "employees.invite"]);
   const supabase = await createClient();
-  const { data: p } = await supabase.from("profiles").select("*, departments(name)").eq("id", id).maybeSingle();
-  if (!p) notFound();
+  if (!UUID.test(id)) notFound();
+  // У profiles и departments две связи (отдел сотрудника и руководитель отдела) — указываем внешний ключ явно,
+  // иначе PostgREST отвечает PGRST201, а страница показывала ложный 404.
+  const { data: p, error } = await supabase.from("profiles").select("*, departments!profiles_department_id_fkey(name)").eq("id", id).maybeSingle();
+  if (error) {
+    console.error("team/[id]: profile load failed", error.code);
+    return <><PageHeader back="/app/team" title="Сотрудник" /><LoadError retry={`/app/team/${id}`} back="/app/team" backLabel="К сотрудникам" /></>;
+  }
+  if (!p) {
+    // Без employees.view RLS скрывает неактивных — это отказ в правах, а не отсутствие записи
+    if (!s.can("employees.view")) return <><PageHeader back="/app/team" title="Сотрудник" /><LoadError kind="denied" text="Карточки сотрудников, ожидающих утверждения, видят те, у кого есть право просмотра сотрудников." back="/app/team" backLabel="К сотрудникам" /></>;
+    notFound();
+  }
   const [{ data: ur }, { data: up }, { data: roles }, { data: perms }, { data: deps }, people, { data: terms }, { data: projects }] = await Promise.all([
     supabase.from("user_roles").select("role_code").eq("user_id", id),
     supabase.from("user_permissions").select("permission_code").eq("user_id", id),

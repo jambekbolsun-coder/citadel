@@ -1,5 +1,6 @@
 import {
-  Banknote, BarChart3, Bell, BellRing, Briefcase, Building2, Calendar, CalendarDays, CalendarPlus, Camera, CheckSquare, FileText, Film, Folder,
+  ArrowLeftRight, Banknote, BookOpen, Boxes, CircleHelp, Coins, HandCoins, Landmark, Info, Video,
+  BarChart3, Bell, BellRing, Briefcase, Building2, Calendar, CalendarDays, CalendarPlus, Camera, CheckSquare, FileText, Film, Folder,
   Gauge, Globe, House, IdCard, Inbox, KeyRound, LayoutGrid, List, Lock, LogOut, Megaphone, Palette, Receipt, ScrollText, Send, Settings,
   ShieldCheck, Smartphone, Sun, Tag, Trophy, User, UserPlus, Users, Wallet, type LucideIcon,
 } from "lucide-react";
@@ -10,6 +11,7 @@ export const ICONS: Record<string, LucideIcon> = {
   chart: BarChart3, idcard: IdCard, key: KeyRound, list: List, settings: Settings, bell: Bell, bellring: BellRing, scroll: ScrollText,
   user: User, briefcase: Briefcase, trophy: Trophy, palette: Palette, layout: LayoutGrid, smartphone: Smartphone, lock: Lock, logout: LogOut,
   gauge: Gauge, building: Building2, file: FileText, send: Send, userplus: UserPlus, receipt: Receipt, calendarplus: CalendarPlus,
+  book: BookOpen, help: CircleHelp, info: Info, video: Video, coins: Coins, handcoins: HandCoins, landmark: Landmark, boxes: Boxes, transfer: ArrowLeftRight,
 };
 
 export function iconOf(name: string): LucideIcon {

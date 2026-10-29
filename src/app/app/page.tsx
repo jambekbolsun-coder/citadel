@@ -7,7 +7,9 @@ import { iconOf } from "@/components/icons";
 import { SubmitWorkButton } from "@/components/submit-work-button";
 import { allowed } from "@/lib/nav";
 import { CONTENT_KIND } from "@/lib/labels";
-import { dateTime, localToIso, money, overdueText, time, todayLocal } from "@/lib/format";
+import { date, dateTime, localToIso, moneyMulti, overdueText, time, todayLocal } from "@/lib/format";
+import { balancesByCurrency, payrollDebt, receivables } from "@/lib/money-math";
+import { CAMPAIGN_STATUS, loadAdProjects, periodOf, statusTone } from "./campaigns/data";
 
 export const metadata = { title: "Главная" };
 
@@ -32,6 +34,9 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
   const production = leader || s.roles.some((r) => PRODUCTION_ROLES.includes(r)) || s.can("content.manage") || s.can("shoots.manage");
   const finance = s.can("finance.view");
   const leadsOn = allowed(s, "/app/leads");
+  const adsOn = s.can("campaigns.manage") || s.can("campaigns.view_all");
+  const adsMine = s.roles.includes("targetologist") && !leader;
+  const payrollOn = s.can("payroll.view");
 
   const [myContent, myTasks, myContentCount, myTaskCount, myReview, projectsActive, leadsNew, leadsPreview, overdue, overduePreview, onReview, unassigned, shoots, pendingPays, pendingExpenses, pendingEmp, invoices, campaigns, myChecks] = await Promise.all([
     supabase.from("content_items").select("id,title,kind,prep_due,projects(name)").eq("assignee_id", s.userId).not("status", "in", "(done,published,cancelled,paused,review)").lte("prep_due", endToday).order("prep_due").limit(5),
@@ -50,10 +55,17 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     s.can("payments.confirm") ? supabase.from("payments").select("id", head).eq("status", "pending") : none,
     s.can("expenses.confirm") ? supabase.from("expenses").select("id", head).eq("status", "pending") : none,
     s.can("employees.manage") ? supabase.from("profiles").select("id", head).eq("status", "pending_approval") : none,
-    finance ? supabase.from("v_invoice_status").select("amount_minor,paid_minor,pay_state").in("pay_state", ["unpaid", "partial", "overdue"]).limit(1000) : none,
+    finance ? supabase.from("v_invoice_status").select("amount_minor,paid_minor,pay_state,currency").in("pay_state", ["unpaid", "partial", "overdue"]).limit(1000) : none,
     s.can("campaigns.manage") || s.can("campaigns.view_all") ? supabase.from("campaigns").select("id", head).eq("status", "active") : none,
     supabase.from("project_admin_checks").select("id", head).eq("admin_id", s.userId).eq("day", today).is("completed_at", null),
   ]);
+  const [ads, balances, payroll] = await Promise.all([
+    adsOn ? loadAdProjects({ period: periodOf({}), status: "work" }) : Promise.resolve(null),
+    finance ? supabase.from("v_account_balances").select("currency,balance_minor") : Promise.resolve({ data: [] }),
+    payrollOn ? supabase.from("v_payroll_balance").select("accrued_minor,paid_minor,currency") : Promise.resolve({ data: [] }),
+  ]);
+  const adCards = ads && !ads.error ? ads.cards : [];
+  const adChecks = adCards.filter((c) => c.overdueCheck).length;
 
   const n = (r: { count?: number | null }) => r.count ?? 0;
   type C = { id: string; title: string; kind: string; prep_due: string | null; projects: { name: string } | null };
@@ -63,9 +75,11 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     ...((myTasks.data ?? []) as unknown as T[]).map((t) => ({ key: "t" + t.id, title: t.title, sub: t.projects?.name ?? "Задача", due: t.due_at, href: `/app/tasks/${t.id}` })),
   ].sort((a, b) => (a.due ?? "").localeCompare(b.due ?? ""));
   const myTotal = n(myContentCount) + n(myTaskCount);
-  const inv = (invoices.data ?? []) as { amount_minor: number; paid_minor: number; pay_state: string }[];
-  const receivable = inv.reduce((a, i) => a + Number(i.amount_minor) - Number(i.paid_minor), 0);
+  const inv = (invoices.data ?? []) as { amount_minor: number; paid_minor: number; pay_state: string; currency: string }[];
+  const receivable = receivables(inv); // по валютам: сомы и доллары не складываются
   const overdueInvoices = inv.filter((i) => i.pay_state === "overdue").length;
+  const cash = balancesByCurrency((balances.data ?? []) as { currency: string; balance_minor: number }[]);
+  const salaryDebt = payrollDebt((payroll.data ?? []) as { accrued_minor: number; paid_minor: number; currency: string }[]);
 
   const tiles = [
     { href: "/app/reports", icon: "chart", title: "Отчёты", text: "План-факт и загрузка" },
@@ -73,6 +87,15 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     { href: "/app/projects", icon: "folder", title: "Проекты", text: "Производство и сроки" },
     { href: "/app/team", icon: "idcard", title: "Сотрудники", text: "Команда и доступы" },
   ].filter((t) => allowed(s, t.href) && (leader || finance || production));
+  // бухгалтеру — его ежедневные разделы, а не «Проекты»
+  if (s.roles.includes("accountant") && !leader) {
+    tiles.splice(0, tiles.length, ...[
+      { href: "/app/finance?tab=payments", icon: "handcoins", title: "Платежи", text: "К подтверждению", show: s.can("payments.confirm") || finance },
+      { href: "/app/finance?tab=receivables", icon: "coins", title: "Долги клиентов", text: "Дебиторка по счетам", show: finance },
+      { href: "/app/finance/expense", icon: "receipt", title: "Расход", text: "Добавить с чеком", show: s.can("expenses.create") },
+      { href: "/app/payroll", icon: "banknote", title: "Зарплаты", text: "Начисления и выплаты", show: allowed(s, "/app/payroll") },
+    ].filter((t) => t.show));
+  }
 
   const attention = [
     { show: n(pendingEmp) > 0, n: n(pendingEmp), label: "Сотрудники ждут утверждения", href: "/app/team?status=pending_approval", tone: "warn" as const },
@@ -83,6 +106,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     { show: production && n(overdue) > 0, n: n(overdue), label: "Просрочено материалов", href: "/app/content?view=overdue", tone: "bad" as const },
     { show: production && n(unassigned) > 0, n: n(unassigned), label: "Материалы без исполнителя и ТЗ", href: "/app/content?view=unassigned", tone: "info" as const },
     { show: n(myChecks) > 0, n: n(myChecks), label: "Ежедневные проверки проектов", href: "/app/checks", tone: "info" as const },
+    { show: adChecks > 0, n: adChecks, label: "Рекламу пора проверить", href: "/app/campaigns", tone: "warn" as const },
   ].filter((a) => a.show);
 
   const first = (s.profile?.full_name || "").split(" ")[0];
@@ -109,13 +133,15 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
         </div>
       )}
 
-      {(leader || production || finance) && (
+      {(leader || production || finance || payrollOn) && (
         <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {(leader || production) && <Stat label="Проектов в работе" value={n(projectsActive)} />}
           {leadsOn && <Stat label="Новых заявок" value={n(leadsNew)} tone={n(leadsNew) ? "warn" : undefined} />}
           {production && <Stat label="На проверке" value={n(onReview)} />}
           {production && <Stat label="Просрочено" value={n(overdue)} tone={n(overdue) ? "bad" : "good"} />}
-          {finance && <Stat label="Дебиторка" value={money(receivable)} hint={overdueInvoices ? `просрочено счетов: ${overdueInvoices}` : "без просрочек"} tone={overdueInvoices ? "bad" : undefined} />}
+          {finance && <Stat label="Должны клиенты" value={<span className="block break-words text-xl">{moneyMulti(receivable, "0")}</span>} hint={overdueInvoices ? `просрочено счетов: ${overdueInvoices}` : "без просрочек"} tone={overdueInvoices ? "bad" : undefined} />}
+          {finance && <Stat label="Остаток в кассах" value={<span className="block break-words text-xl">{moneyMulti(cash, "0")}</span>} hint="по валютам раздельно" />}
+          {payrollOn && <Stat label="Должны сотрудникам" value={<span className="block break-words text-xl">{moneyMulti(salaryDebt, "0")}</span>} hint="утверждённые начисления − выплаты" tone={Object.keys(salaryDebt).length ? "warn" : undefined} />}
           {campaigns.count ? <Stat label="Активных кампаний" value={n(campaigns)} /> : null}
         </div>
       )}
@@ -134,6 +160,39 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {adsMine && ads && (
+        <section className="mb-5">
+          <div className="mb-2 flex items-center justify-between gap-2 px-1">
+            <h2 className="text-base font-semibold">Мои рекламные проекты{adCards.length ? ` · ${adCards.length}` : ""}</h2>
+            <Link href="/app/campaigns" className="text-sm font-semibold text-primary">Все</Link>
+          </div>
+          {ads.error ? <Notice tone="bad">Не удалось загрузить рекламные проекты. Обновите страницу.</Notice> : adCards.length === 0 ? (
+            <div className="rounded-2xl border border-line bg-surface p-4 text-sm text-muted">Вам пока не назначены рекламные проекты.</div>
+          ) : (
+            <>
+              <div className="mb-3 grid grid-cols-3 gap-2">
+                <Stat label="Работает" value={ads.totals!.active} />
+                <Stat label="Пауза" value={ads.totals!.paused} />
+                <Stat label="Проверить" value={adChecks} tone={adChecks ? "warn" : "good"} />
+              </div>
+              <ul className="grouped">
+                {adCards.slice(0, 5).map((c) => (
+                  <li key={c.projectId}>
+                    <Link href={c.campaigns.length === 1 ? `/app/campaigns/${c.campaigns[0].id}` : `/app/campaigns/project/${c.projectId}`} className="row">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{c.client?.company_name ?? c.projectName}</span>
+                        <span className="block truncate text-[13px] text-muted">{moneyMulti(c.dailyPlan, "план не задан")}/день · потрачено {moneyMulti(c.spend, "0")}{c.nextCheck ? ` · проверка ${date(c.nextCheck)}` : ""}</span>
+                      </span>
+                      <Badge tone={c.overdueCheck ? "warn" : statusTone(c.status)}>{c.overdueCheck ? "Проверить" : CAMPAIGN_STATUS[c.status]}</Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 

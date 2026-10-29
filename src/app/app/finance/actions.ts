@@ -13,6 +13,12 @@ export const createExpense = action(async (fd) => {
   if (!amount) throw new Error("Укажите сумму");
   const desc = str(fd, "description");
   if (!desc) throw new Error("Опишите расход");
+  // касса и расход — в одной валюте (проверяется до загрузки чека, чтобы не оставлять «сиротские» файлы)
+  const accountId = opt(fd, "account_id");
+  if (accountId) {
+    const { data: acc } = await supabase.from("financial_accounts").select("currency").eq("id", accountId).maybeSingle();
+    if (acc && acc.currency !== (str(fd, "currency") || "KGS")) throw new Error(`Касса в ${acc.currency}, а расход в ${str(fd, "currency") || "KGS"} — выберите кассу той же валюты`);
+  }
   let receipt: string | null = null;
   const file = fd.get("receipt");
   if (file instanceof File && file.size > 0) {
