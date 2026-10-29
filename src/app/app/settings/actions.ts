@@ -1,7 +1,10 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 import { action, check, opt, str } from "@/lib/actions";
+import { getSession } from "@/lib/auth";
+import { availableWorkTabs, WORK_TAB_COOKIE } from "@/lib/nav";
 
 export const saveProfile = action(async (fd) => {
   const supabase = await createClient();
@@ -30,14 +33,14 @@ export const savePin = action(async (fd) => {
   const pin = str(fd, "pin");
   if (pin !== str(fd, "pin2")) throw new Error("PIN не совпадает");
   check(await supabase.rpc("set_device_pin", { p_device: str(fd, "device_id"), p_pin: pin, p_name: str(fd, "device_name") }));
-  revalidatePath("/app/settings");
+  revalidatePath("/app/settings/devices");
   return { ok: "PIN установлен для этого устройства", data: { pin: "set" } };
 });
 
 export const removePin = action(async (fd) => {
   const supabase = await createClient();
   check(await supabase.from("device_pins").delete().eq("device_id", str(fd, "device_id")));
-  revalidatePath("/app/settings");
+  revalidatePath("/app/settings/devices");
   return "Устройство удалено из доверенных";
 });
 
@@ -51,7 +54,7 @@ export const saveAppSetting = action(async (fd) => {
     value = JSON.stringify(days);
   } else if (!/^\S.{0,200}$/.test(value)) throw new Error("Некорректное значение");
   check(await supabase.from("app_settings").update({ value, updated_at: new Date().toISOString() }).eq("key", key));
-  revalidatePath("/app/settings");
+  revalidatePath("/app/settings/company");
   return "Сохранено";
 });
 
@@ -61,6 +64,17 @@ export const saveCapacity = action(async (fd) => {
   const value = raw === "" ? null : Number(raw);
   if (value !== null && (Number.isNaN(value) || value < 0)) throw new Error("Некорректное число");
   check(await supabase.from("capacity_rules").update({ value, updated_at: new Date().toISOString() }).eq("key", str(fd, "key")));
-  revalidatePath("/app/settings");
+  revalidatePath("/app/settings/capacity");
   return "Норматив сохранён";
 });
+
+/** Закрепить 4-ю кнопку нижней панели — только среди доступных сотруднику разделов. */
+export async function setWorkTab(fd: FormData) {
+  const s = await getSession();
+  if (!s) return;
+  const tab = str(fd, "tab");
+  if (!(availableWorkTabs(s) as string[]).includes(tab)) return;
+  const jar = await cookies();
+  jar.set(`${WORK_TAB_COOKIE}_${s.userId.slice(0, 8)}`, tab, { path: "/app", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true, secure: process.env.NODE_ENV === "production" });
+  revalidatePath("/app", "layout");
+}

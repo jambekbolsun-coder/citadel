@@ -2,10 +2,11 @@ import Link from "next/link";
 import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, Notice, PageHeader } from "@/components/ui";
+import { SubmitWorkButton } from "@/components/submit-work-button";
 import { CONTENT_KIND, CONTENT_STATUS, TASK_STATUS, RESPONSE } from "@/lib/labels";
-import { localToIso, overdueText, time, todayLocal, date } from "@/lib/format";
+import { dateTime, localToIso, overdueText, time, todayLocal, date } from "@/lib/format";
 
-export const metadata = { title: "Сегодня" };
+export const metadata = { title: "Мои задачи" };
 
 // Личный рабочий день: всё, что назначено мне на сегодня (+ просроченное)
 export default async function Today() {
@@ -13,6 +14,11 @@ export default async function Today() {
   const supabase = await createClient();
   const today = todayLocal();
   const end = localToIso(today, "23:59");
+  const weekEnd = new Date(new Date(end).getTime() + 7 * 86400_000).toISOString();
+  const soonQ = Promise.all([
+    supabase.from("content_items").select("id,title,kind,prep_due").eq("assignee_id", s.userId).not("status", "in", "(done,published,cancelled,paused,review)").gt("prep_due", end).lte("prep_due", weekEnd).order("prep_due").limit(15),
+    supabase.from("tasks").select("id,title,due_at").eq("assignee_id", s.userId).not("status", "in", "(done,cancelled,review)").gt("due_at", end).lte("due_at", weekEnd).order("due_at").limit(15),
+  ]);
   const [{ data: content }, { data: tasks }, { data: shoots }, { data: stories }, { data: reviews }, { data: checks }] = await Promise.all([
     supabase.from("content_items").select("id,title,kind,status,prep_due,projects(name)").eq("assignee_id", s.userId).not("status", "in", "(done,published,cancelled,paused,review)").lte("prep_due", end).order("prep_due"),
     supabase.from("tasks").select("id,title,status,due_at").eq("assignee_id", s.userId).not("status", "in", "(done,cancelled,review)").lte("due_at", end).order("due_at"),
@@ -21,6 +27,11 @@ export default async function Today() {
     supabase.from("content_items").select("id,title,kind,review_due").eq("reviewer_id", s.userId).eq("status", "review").order("review_due"),
     supabase.from("project_admin_checks").select("id,due_at,projects(name)").eq("admin_id", s.userId).eq("day", today).is("completed_at", null),
   ]);
+  const [{ data: soonContent }, { data: soonTasks }] = await soonQ;
+  const soon = [
+    ...((soonContent ?? []) as { id: string; title: string; kind: string; prep_due: string }[]).map((x) => ({ key: "c" + x.id, title: `${CONTENT_KIND[x.kind]}: ${x.title}`, due: x.prep_due, href: `/app/content/${x.id}` })),
+    ...((soonTasks ?? []) as { id: string; title: string; due_at: string }[]).map((x) => ({ key: "t" + x.id, title: x.title, due: x.due_at, href: `/app/tasks/${x.id}` })),
+  ].sort((a, b) => a.due.localeCompare(b.due));
   const c = (content ?? []) as unknown as { id: string; title: string; kind: string; status: string; prep_due: string; projects: { name: string } | null }[];
   const t = (tasks ?? []) as { id: string; title: string; status: string; due_at: string }[];
   const sh = ((shoots ?? []) as unknown as { response: string; role: string; shoots: { id: string; title: string; starts_at: string; location: string | null; status: string } }[]).filter((x) => x.shoots.status === "planned");
@@ -31,7 +42,7 @@ export default async function Today() {
 
   return (
     <>
-      <PageHeader title="Сегодня" subtitle={date(today)} />
+      <PageHeader title="Мои задачи" subtitle={`Сегодня, ${date(today)}`} actions={<SubmitWorkButton />} />
       {total === 0 ? (
         <Notice tone="good">Запланированные задачи на сегодня выполнены. Это не означает, что материалы уже опубликованы или проверены — следите за статусами в контент-плане.</Notice>
       ) : (
@@ -62,6 +73,21 @@ export default async function Today() {
               <span>{x.projects?.name}</span>{overdueText(x.due_at) ? <Badge tone="bad">{overdueText(x.due_at)}</Badge> : <Badge>до {time(x.due_at)}</Badge>}
             </Link>))}</Card>}
         </div>
+      )}
+      {soon.length > 0 && (
+        <section className="mt-6">
+          <h2 className="group-title">Ближайшие 7 дней</h2>
+          <ul className="grouped">
+            {soon.map((x) => (
+              <li key={x.key}>
+                <Link href={x.href} className="row">
+                  <span className="min-w-0 flex-1 truncate">{x.title}</span>
+                  <span className="shrink-0 text-[13px] tabular-nums text-muted">{dateTime(x.due)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </>
   );

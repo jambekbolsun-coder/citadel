@@ -58,7 +58,7 @@ export function ThemeSwitch() {
     if (v === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
   };
   return (
-    <div className="flex gap-2">{[["system", "Как в системе"], ["light", "Светлая"], ["dark", "Тёмная"]].map(([k, l]) => <button key={k} type="button" onClick={() => apply(k)} className={btn(t === k ? "primary" : "secondary")}>{l}</button>)}</div>
+    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Тема">{[["system", "Системная"], ["light", "Светлая"], ["dark", "Тёмная"]].map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={t === k} onClick={() => apply(k)} className={btn(t === k ? "primary" : "secondary", "px-2")}>{l}</button>)}</div>
   );
 }
 
@@ -170,7 +170,7 @@ export function PushToggle() {
 
 export function SignOutEverywhere() {
   return (
-    <button type="button" className={btn("danger")} onClick={async () => { await createClient().auth.signOut({ scope: "global" }); localStorage.removeItem("citadel.pin"); location.assign(new URL("/login", location.origin)); }}>
+    <button type="button" className={btn("danger", "w-full")} onClick={async () => { if (!window.confirm("Выйти на всех устройствах? Везде понадобится снова ввести пароль.")) return; await createClient().auth.signOut({ scope: "global" }); localStorage.removeItem("citadel.pin"); location.assign(new URL("/login", location.origin)); }}>
       Выйти на всех устройствах
     </button>
   );

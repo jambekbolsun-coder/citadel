@@ -12,13 +12,13 @@ export function cn(...a: Parameters<typeof clsx>) {
 export function PageHeader({ title, subtitle, actions, back }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; back?: string }) {
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         {back && (
-          <Link href={back} className="mb-1 inline-block text-sm text-muted hover:text-ink">
+          <Link href={back} className="mb-1 hidden text-sm text-muted hover:text-ink md:inline-block">
             ← Назад
           </Link>
         )}
-        <h1 className="font-display text-2xl font-semibold tracking-tight md:text-[28px]">{title}</h1>
+        <h1 className="font-display text-[22px] font-semibold leading-tight tracking-tight [overflow-wrap:anywhere] md:text-[28px]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -26,9 +26,9 @@ export function PageHeader({ title, subtitle, actions, back }: { title: ReactNod
   );
 }
 
-export function Card({ children, className, title, actions }: { children: ReactNode; className?: string; title?: ReactNode; actions?: ReactNode }) {
+export function Card({ children, className, title, actions, id }: { children: ReactNode; className?: string; title?: ReactNode; actions?: ReactNode; id?: string }) {
   return (
-    <section className={cn("rounded-2xl border border-line bg-surface p-4 md:p-5", className)}>
+    <section id={id} className={cn("scroll-mt-20 rounded-2xl border border-line bg-surface p-4 md:p-5", className)}>
       {(title || actions) && (
         <div className="mb-3 flex items-center justify-between gap-2">
           {title && <h2 className="text-base font-semibold">{title}</h2>}
@@ -64,7 +64,7 @@ export function Stat({ label, value, hint, tone }: { label: string; value: React
   );
 }
 
-const btnBase = "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none";
+const btnBase = "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none";
 const btnVariants = {
   primary: "bg-primary text-primary-ink hover:brightness-110",
   secondary: "border border-line bg-surface-2 text-ink hover:bg-surface",
@@ -132,23 +132,43 @@ export function Progress({ value, max, tone = "good" }: { value: number; max: nu
 }
 
 export function Tabs({ items, active }: { items: { href: string; label: string; key: string }[]; active: string }) {
-  return (
-    <div className="scroll-x mb-4 -mx-1">
-      <div className="flex gap-1 px-1">
-        {items.map((t) => (
-          <Link
-            key={t.key}
-            href={t.href}
-            className={cn(
-              "whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold",
-              t.key === active ? "bg-surface text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink",
-            )}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
+  const current = items.find((t) => t.key === active) ?? items[0];
+  const strip = (
+    <div className="flex gap-1 px-1">
+      {items.map((t) => (
+        <Link
+          key={t.key}
+          href={t.href}
+          aria-current={t.key === active ? "page" : undefined}
+          className={cn(
+            "inline-flex min-h-10 items-center whitespace-nowrap rounded-xl px-3 text-sm font-semibold",
+            t.key === active ? "bg-surface text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink",
+          )}
+        >
+          {t.label}
+        </Link>
+      ))}
     </div>
+  );
+  if (items.length <= 3) return <div className="scroll-x mb-4 -mx-1">{strip}</div>;
+  return (
+    <>
+      {/* на телефоне — компактный выбор вместо длинной полосы вкладок */}
+      <details className="tabs-pick group relative mb-4 md:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl bg-surface px-4 text-sm font-semibold ring-1 ring-line">
+          <span><span className="font-normal text-muted">Раздел: </span>{current?.label}</span>
+          <span aria-hidden className="text-muted transition group-open:rotate-180">▾</span>
+        </summary>
+        <ul className="grouped absolute inset-x-0 top-[calc(100%+6px)] z-20 shadow-xl">
+          {items.map((t) => (
+            <li key={t.key}>
+              <Link href={t.href} aria-current={t.key === active ? "page" : undefined} className={cn("row", t.key === active && "font-semibold text-brand")}>{t.label}</Link>
+            </li>
+          ))}
+        </ul>
+      </details>
+      <div className="scroll-x mb-4 -mx-1 hidden md:block">{strip}</div>
+    </>
   );
 }
 

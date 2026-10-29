@@ -3,7 +3,7 @@ import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Card, Empty, PageHeader, Pager } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/action-form";
-import { pageRange } from "@/lib/data";
+import { pageRange } from "@/lib/paging";
 import { date } from "@/lib/format";
 import { ClientFields } from "./client-fields";
 import { createClientAction } from "./actions";
@@ -54,7 +54,7 @@ export default async function Clients({ searchParams }: PageProps<"/app/clients"
           <Pager page={page} hasMore={rows.length > 30} base={`/app/clients?q=${encodeURIComponent(q)}`} />
         </div>
         {s.can("clients.manage") && (
-          <Card title="Новый клиент">
+          <Card id="new" title="Новый клиент">
             <ActionForm action={createClientAction} className="space-y-3">
               <ClientFields />
               <Submit className="w-full">Создать</Submit>

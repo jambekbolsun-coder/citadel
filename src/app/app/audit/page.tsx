@@ -1,7 +1,8 @@
 import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Card, PageHeader, Pager } from "@/components/ui";
-import { activePeople, nameOf, pageRange } from "@/lib/data";
+import { activePeople, nameOf } from "@/lib/data";
+import { pageRange } from "@/lib/paging";
 import { dateTime } from "@/lib/format";
 
 export const metadata = { title: "Журнал аудита" };

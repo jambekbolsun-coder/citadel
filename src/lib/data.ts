@@ -27,9 +27,3 @@ export function nameOf(people: Person[], id: string | null | undefined) {
   if (!id) return "—";
   return people.find((p) => p.id === id)?.full_name ?? "—";
 }
-
-export const PAGE = 30;
-export function pageRange(page: number) {
-  const p = Math.max(1, page || 1);
-  return { from: (p - 1) * PAGE, to: p * PAGE, page: p };
-}

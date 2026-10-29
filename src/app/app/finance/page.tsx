@@ -9,6 +9,7 @@ import { EXPENSE_STATUS, PAYMENT_STATUS, PAY_STATE } from "@/lib/labels";
 import { date, money, todayLocal } from "@/lib/format";
 import { confirmPayment, rejectPayment } from "@/app/app/projects/actions";
 import * as A from "./actions";
+import { ExpenseForm } from "./expense-form";
 
 export const metadata = { title: "Бухгалтерия" };
 
@@ -159,10 +160,11 @@ async function Expenses({ from, to, canConfirm, canCreate, accs, people }: { fro
     supabase.from("departments").select("id,name"),
   ]);
   const rows = (data ?? []) as unknown as { id: string; amount_minor: number; currency: string; purchased_on: string; vendor: string | null; description: string; status: string; is_asset: boolean; receipt_path: string | null; created_by: string; confirmed_by: string | null; cancel_reason: string | null; expense_categories: { name: string } | null; projects: { name: string } | null; tags: string[] }[];
+  const withReceipt = rows.filter((x) => x.receipt_path);
   const signed = new Map<string, string>();
-  for (const r of rows.filter((x) => x.receipt_path)) {
-    const { data: u } = await supabase.storage.from("finance").createSignedUrl(r.receipt_path!, 600);
-    if (u?.signedUrl) signed.set(r.id, u.signedUrl);
+  if (withReceipt.length) {
+    const { data: urls } = await supabase.storage.from("finance").createSignedUrls(withReceipt.map((r) => r.receipt_path!), 600);
+    (urls ?? []).forEach((u, i) => u.signedUrl && signed.set(withReceipt[i].id, u.signedUrl));
   }
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
@@ -196,31 +198,8 @@ async function Expenses({ from, to, canConfirm, canCreate, accs, people }: { fro
         )}
       </div>
       {canCreate && (
-        <Card title="Новый расход">
-          <ActionForm action={A.createExpense} reset className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Сумма *"><input name="amount" required inputMode="decimal" className="input" /></Field>
-              <Field label="Валюта"><select name="currency" className="input"><option>KGS</option><option>USD</option></select></Field>
-              <Field label="Дата покупки *"><input name="purchased_on" type="date" required defaultValue={todayLocal()} className="input" /></Field>
-              <Field label="Дата оплаты"><input name="paid_on" type="date" className="input" /></Field>
-            </div>
-            <Field label="Описание *"><input name="description" required className="input" /></Field>
-            <Field label="Категория *"><select name="category_id" required className="input">{(cats ?? []).map((c: { id: string; name: string; parent_id: string | null; requires_project: boolean }) => <option key={c.id} value={c.id}>{c.parent_id ? "— " : ""}{c.name}{c.requires_project ? " (нужен проект)" : ""}</option>)}</select></Field>
-            <Field label="Продавец / контрагент"><input name="vendor" className="input" /></Field>
-            <Field label="Проект"><select name="project_id" className="input"><option value="">—</option>{(projects ?? []).map((p: { id: string; name: string }) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
-            <Field label="Отдел"><select name="department_id" className="input"><option value="">—</option>{(deps ?? []).map((d: { id: string; name: string }) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Счёт оплаты"><select name="account_id" className="input"><option value="">—</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></Field>
-              <Field label="Способ"><input name="method" className="input" /></Field>
-            </div>
-            <Field label="Ответственный"><PeopleSelect name="responsible_id" people={people} /></Field>
-            <Field label="Теги (через запятую)"><input name="tags" className="input" /></Field>
-            <Field label="Повторяемость"><select name="recurrence" className="input"><option value="">Разовый</option><option value="monthly">Ежемесячно</option><option value="weekly">Еженедельно</option><option value="yearly">Ежегодно</option></select></Field>
-            <Field label="Чек / фото (до 4 МБ)"><input name="receipt" type="file" accept="image/*,application/pdf" className="input" /></Field>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_asset" /> Учесть как имущество (без двойного списания)</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="draft" /> Сохранить как черновик</label>
-            <Submit className="w-full">Внести расход</Submit>
-          </ActionForm>
+        <Card title="Новый расход" className="self-start">
+          <ExpenseForm accs={accs} people={people} cats={cats ?? []} projects={projects ?? []} deps={deps ?? []} />
         </Card>
       )}
     </div>

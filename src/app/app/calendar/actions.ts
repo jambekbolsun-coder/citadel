@@ -22,14 +22,15 @@ export const deleteCalendarEvent = action(async (fd) => {
   return "Удалено";
 });
 
-/** Перенос события на другой день перетаскиванием: время суток сохраняется, правила и история — как при обычном переносе. */
+/** Перенос события на другой день (перетаскивание или кнопка): время суток сохраняется, правила и история — как при обычном переносе. */
 export const moveCalendarItem = action(async (fd) => {
   const supabase = await createClient();
   const kind = str(fd, "kind");
   const id = str(fd, "id");
   const day = str(fd, "day");
-  const reason = str(fd, "reason") || "Перенос в календаре";
+  const reason = str(fd, "reason");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error("Некорректная дата");
+  if (!reason) throw new Error("Укажите причину переноса");
   const shiftTo = (iso: string) => localToIso(day, time(iso));
   if (kind === "task") {
     const { data: t } = await supabase.from("tasks").select("due_at").eq("id", id).single();
@@ -46,7 +47,7 @@ export const moveCalendarItem = action(async (fd) => {
     const cur = kind === "content" ? c?.prep_due : c?.publish_due;
     if (!cur) throw new Error("У материала нет этого срока");
     check(await supabase.rpc("content_reschedule", { p_id: id, p_prep_due: kind === "content" ? shiftTo(cur) : null, p_publish_due: kind === "publish" ? shiftTo(cur) : null, p_reason: reason }));
-  } else throw new Error("Это событие нельзя перенести перетаскиванием");
+  } else throw new Error("Это событие нельзя перенести");
   revalidatePath("/app/calendar");
   return `Перенесено на ${day.split("-").reverse().join(".")}`;
 });

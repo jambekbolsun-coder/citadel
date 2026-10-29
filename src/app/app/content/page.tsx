@@ -3,7 +3,8 @@ import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, Empty, PageHeader, Pager, Tabs } from "@/components/ui";
 import { CONTENT_KIND, CONTENT_STATUS } from "@/lib/labels";
-import { activePeople, nameOf, pageRange } from "@/lib/data";
+import { activePeople, nameOf } from "@/lib/data";
+import { pageRange } from "@/lib/paging";
 import { dateTime, overdueText } from "@/lib/format";
 
 export const metadata = { title: "Контент" };
@@ -23,12 +24,13 @@ export default async function ContentList({ searchParams }: PageProps<"/app/cont
   if (view === "revision") q = q.eq("assignee_id", s.userId).eq("status", "revision");
   if (view === "overdue") q = q.not("status", "in", "(done,published,cancelled,paused)").lt("prep_due", new Date().toISOString());
   if (view === "publish") q = q.eq("status", "done");
+  if (view === "unassigned") q = q.is("assignee_id", null).eq("status", "planned");
   if (status) q = q.eq("status", status);
   if (kind) q = q.eq("kind", kind);
   if (assignee) q = q.eq("assignee_id", assignee);
   const [{ data }, people] = await Promise.all([q, activePeople()]);
   const rows = (data ?? []) as unknown as { id: string; title: string; kind: string; status: string; assignee_id: string | null; reviewer_id: string | null; prep_due: string | null; review_due: string | null; publish_due: string | null; projects: { id: string; name: string } | null }[];
-  const views = [["mine", "Мои"], ["review", "На мою проверку"], ["revision", "На доработке"], ["publish", "К публикации"], ["overdue", "Просрочено"], ["all", "Все доступные"]];
+  const views = [["mine", "Мои"], ["review", "На мою проверку"], ["revision", "На доработке"], ["publish", "К публикации"], ["overdue", "Просрочено"], ["unassigned", "Без исполнителя"], ["all", "Все доступные"]];
   const base = `/app/content?view=${view}&status=${status}&kind=${kind}&assignee=${assignee}`;
   return (
     <>

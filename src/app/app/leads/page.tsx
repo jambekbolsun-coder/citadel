@@ -6,7 +6,8 @@ import { RealtimeRefresh } from "@/components/realtime-refresh";
 import { ActionForm, Submit } from "@/components/action-form";
 import { LEAD_STAGES } from "@/lib/labels";
 import { dateTime } from "@/lib/format";
-import { activePeople, nameOf, pageRange } from "@/lib/data";
+import { activePeople, nameOf } from "@/lib/data";
+import { pageRange } from "@/lib/paging";
 import { createManualLead, takeLead } from "./actions";
 
 export const metadata = { title: "Заявки и продажи" };
@@ -92,7 +93,7 @@ export default async function Leads({ searchParams }: PageProps<"/app/leads">) {
           )}
           <Pager page={page} hasMore={rows.length > 30} base={base} />
         </div>
-        <Card title="Добавить заявку вручную">
+        <Card id="new" title="Добавить заявку вручную">
           <ActionForm action={createManualLead} className="space-y-3">
             <Field label="Имя *"><input name="name" required className="input" /></Field>
             <Field label="Телефон *"><input name="phone" required className="input" /></Field>

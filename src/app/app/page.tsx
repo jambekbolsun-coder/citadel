@@ -1,160 +1,220 @@
 import Link from "next/link";
-import { Globe, Building2, BarChart3, Users, ArrowRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { requireActive } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, Notice, PageHeader, Stat } from "@/components/ui";
-import { dateTime, money, overdueText, time, todayLocal, localToIso } from "@/lib/format";
-import { CONTENT_KIND, CONTENT_STATUS, PROJECT_STATUS } from "@/lib/labels";
+import { Badge, Notice, Stat, cn } from "@/components/ui";
+import { iconOf } from "@/components/icons";
+import { SubmitWorkButton } from "@/components/submit-work-button";
+import { allowed } from "@/lib/nav";
+import { CONTENT_KIND } from "@/lib/labels";
+import { dateTime, localToIso, money, overdueText, time, todayLocal } from "@/lib/format";
 
 export const metadata = { title: "Главная" };
+
+const PRODUCTION_ROLES = ["creative_director", "project_manager", "planning_director", "project_admin", "department_head"];
+const OPEN_CONTENT = "(done,published,cancelled,paused)";
+const head = { count: "exact" as const, head: true };
+const none = Promise.resolve({ count: 0, data: [] as unknown[] });
+
+type MyItem = { key: string; title: string; sub: string; due: string | null; href: string };
 
 export default async function Dashboard({ searchParams }: PageProps<"/app">) {
   const sp = await searchParams;
   const s = await requireActive();
   const supabase = await createClient();
   const today = todayLocal();
-  const tomorrowStart = localToIso(today, "00:00");
-  const dayAfter = new Date(new Date(tomorrowStart).getTime() + 2 * 86400_000).toISOString();
-  const nowIso = new Date().toISOString();
-  const isLead = s.can("projects.view_all") || s.can("leads.manage") || s.can("finance.view") || s.isOwner;
+  const endToday = localToIso(today, "23:59");
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const in2days = new Date(now.getTime() + 2 * 86400_000).toISOString();
 
-  const [leads, overdue, shoots, invoices, pendingPays, pendingEmp, myContent, myTasks, activeProjects] = await Promise.all([
-    s.can("leads.view") || s.can("leads.receive") || s.can("leads.manage")
-      ? supabase.from("leads").select("id,name,phone,service,created_at,assignee_id").eq("stage", "new").order("created_at", { ascending: false }).limit(5)
-      : Promise.resolve({ data: [] }),
-    supabase.from("content_items").select("id,title,kind,prep_due,status,project_id,projects(name)").not("status", "in", "(done,published,cancelled,paused)").lt("prep_due", nowIso).order("prep_due").limit(6),
-    supabase.from("shoots").select("id,title,starts_at,location,projects(name)").eq("status", "planned").gte("starts_at", nowIso).lt("starts_at", dayAfter).order("starts_at").limit(6),
-    s.can("finance.view") ? supabase.from("v_invoice_status").select("id,title,amount_minor,paid_minor,due_on,pay_state,project_id").in("pay_state", ["unpaid", "partial", "overdue"]).order("due_on").limit(6) : Promise.resolve({ data: [] }),
-    s.can("payments.confirm") ? supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending") : Promise.resolve({ count: 0 }),
-    s.can("employees.manage") ? supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "pending_approval") : Promise.resolve({ count: 0 }),
-    supabase.from("content_items").select("id,title,kind,status,prep_due,projects(name)").eq("assignee_id", s.userId).not("status", "in", "(done,published,cancelled)").order("prep_due").limit(6),
-    supabase.from("tasks").select("id,title,due_at,status").eq("assignee_id", s.userId).not("status", "in", "(done,cancelled)").order("due_at").limit(6),
-    supabase.from("projects").select("id", { count: "exact", head: true }).eq("status", "in_progress"),
+  const leader = s.isOwner || s.roles.includes("manager");
+  const production = leader || s.roles.some((r) => PRODUCTION_ROLES.includes(r)) || s.can("content.manage") || s.can("shoots.manage");
+  const finance = s.can("finance.view");
+  const leadsOn = allowed(s, "/app/leads");
+
+  const [myContent, myTasks, myContentCount, myTaskCount, myReview, projectsActive, leadsNew, leadsPreview, overdue, overduePreview, onReview, unassigned, shoots, pendingPays, pendingExpenses, pendingEmp, invoices, campaigns, myChecks] = await Promise.all([
+    supabase.from("content_items").select("id,title,kind,prep_due,projects(name)").eq("assignee_id", s.userId).not("status", "in", "(done,published,cancelled,paused,review)").lte("prep_due", endToday).order("prep_due").limit(5),
+    supabase.from("tasks").select("id,title,due_at,projects(name)").eq("assignee_id", s.userId).not("status", "in", "(done,cancelled,review)").lte("due_at", endToday).order("due_at").limit(5),
+    supabase.from("content_items").select("id", head).eq("assignee_id", s.userId).not("status", "in", "(done,published,cancelled,paused,review)").lte("prep_due", endToday),
+    supabase.from("tasks").select("id", head).eq("assignee_id", s.userId).not("status", "in", "(done,cancelled,review)").lte("due_at", endToday),
+    supabase.from("content_items").select("id", head).eq("reviewer_id", s.userId).eq("status", "review"),
+    leader || production ? supabase.from("projects").select("id", head).eq("status", "in_progress") : none,
+    leadsOn ? supabase.from("leads").select("id", head).eq("stage", "new") : none,
+    leadsOn ? supabase.from("leads").select("id,name,service,created_at").eq("stage", "new").order("created_at", { ascending: false }).limit(3) : none,
+    production ? supabase.from("content_items").select("id", head).not("status", "in", OPEN_CONTENT).lt("prep_due", nowIso) : none,
+    production ? supabase.from("content_items").select("id,title,prep_due,projects(name)").not("status", "in", OPEN_CONTENT).lt("prep_due", nowIso).order("prep_due").limit(3) : none,
+    production ? supabase.from("content_items").select("id", head).eq("status", "review") : none,
+    production ? supabase.from("content_items").select("id", head).is("assignee_id", null).eq("status", "planned") : none,
+    production ? supabase.from("shoots").select("id,title,starts_at,location,projects(name)").eq("status", "planned").gte("starts_at", nowIso).lt("starts_at", in2days).order("starts_at").limit(4) : none,
+    s.can("payments.confirm") ? supabase.from("payments").select("id", head).eq("status", "pending") : none,
+    s.can("expenses.confirm") ? supabase.from("expenses").select("id", head).eq("status", "pending") : none,
+    s.can("employees.manage") ? supabase.from("profiles").select("id", head).eq("status", "pending_approval") : none,
+    finance ? supabase.from("v_invoice_status").select("amount_minor,paid_minor,pay_state").in("pay_state", ["unpaid", "partial", "overdue"]).limit(1000) : none,
+    s.can("campaigns.manage") || s.can("campaigns.view_all") ? supabase.from("campaigns").select("id", head).eq("status", "active") : none,
+    supabase.from("project_admin_checks").select("id", head).eq("admin_id", s.userId).eq("day", today).is("completed_at", null),
   ]);
 
-  const tiles = [
-    { href: "/app/cms", icon: Globe, title: "Маркетинг и сайт", text: "Сайт, заявки, CRM, тарифы", show: s.can("cms.manage") || s.can("leads.manage") },
-    { href: "/app/projects", icon: Building2, title: "Управление компанией", text: "Проекты, календарь, производство", show: true },
-    { href: "/app/reports", icon: BarChart3, title: "Отчёт компании", text: "План-факт, финансы, загрузка", show: s.can("reports.view") || s.can("finance.view") },
-    { href: "/app/team", icon: Users, title: "Сотрудники", text: "Команда, приглашения, права", show: s.can("employees.view") },
-  ].filter((t) => t.show);
+  const n = (r: { count?: number | null }) => r.count ?? 0;
+  type C = { id: string; title: string; kind: string; prep_due: string | null; projects: { name: string } | null };
+  type T = { id: string; title: string; due_at: string | null; projects: { name: string } | null };
+  const mine: MyItem[] = [
+    ...((myContent.data ?? []) as unknown as C[]).map((c) => ({ key: "c" + c.id, title: `${CONTENT_KIND[c.kind]}: ${c.title}`, sub: c.projects?.name ?? "", due: c.prep_due, href: `/app/content/${c.id}` })),
+    ...((myTasks.data ?? []) as unknown as T[]).map((t) => ({ key: "t" + t.id, title: t.title, sub: t.projects?.name ?? "Задача", due: t.due_at, href: `/app/tasks/${t.id}` })),
+  ].sort((a, b) => (a.due ?? "").localeCompare(b.due ?? ""));
+  const myTotal = n(myContentCount) + n(myTaskCount);
+  const inv = (invoices.data ?? []) as { amount_minor: number; paid_minor: number; pay_state: string }[];
+  const receivable = inv.reduce((a, i) => a + Number(i.amount_minor) - Number(i.paid_minor), 0);
+  const overdueInvoices = inv.filter((i) => i.pay_state === "overdue").length;
 
+  const tiles = [
+    { href: "/app/reports", icon: "chart", title: "Отчёты", text: "План-факт и загрузка" },
+    { href: "/app/finance", icon: "wallet", title: "Бухгалтерия", text: "Платежи и расходы" },
+    { href: "/app/projects", icon: "folder", title: "Проекты", text: "Производство и сроки" },
+    { href: "/app/team", icon: "idcard", title: "Сотрудники", text: "Команда и доступы" },
+  ].filter((t) => allowed(s, t.href) && (leader || finance || production));
+
+  const attention = [
+    { show: n(pendingEmp) > 0, n: n(pendingEmp), label: "Сотрудники ждут утверждения", href: "/app/team?status=pending_approval", tone: "warn" as const },
+    { show: n(pendingPays) > 0, n: n(pendingPays), label: "Платежи ждут подтверждения", href: "/app/finance?tab=payments", tone: "warn" as const },
+    { show: n(pendingExpenses) > 0, n: n(pendingExpenses), label: "Расходы ждут подтверждения", href: "/app/finance?tab=expenses", tone: "warn" as const },
+    { show: overdueInvoices > 0, n: overdueInvoices, label: "Счета просрочены клиентами", href: "/app/finance?tab=receivables", tone: "bad" as const },
+    { show: n(myReview) > 0, n: n(myReview), label: "Материалы ждут моей проверки", href: "/app/today", tone: "warn" as const },
+    { show: production && n(overdue) > 0, n: n(overdue), label: "Просрочено материалов", href: "/app/content?view=overdue", tone: "bad" as const },
+    { show: production && n(unassigned) > 0, n: n(unassigned), label: "Материалы без исполнителя и ТЗ", href: "/app/content?view=unassigned", tone: "info" as const },
+    { show: n(myChecks) > 0, n: n(myChecks), label: "Ежедневные проверки проектов", href: "/app/checks", tone: "info" as const },
+  ].filter((a) => a.show);
+
+  const first = (s.profile?.full_name || "").split(" ")[0];
   return (
     <>
-      <PageHeader title={`Здравствуйте, ${(s.profile?.full_name || "").split(" ")[0] || "коллега"}`} subtitle={new Intl.DateTimeFormat("ru-RU", { timeZone: "Asia/Bishkek", weekday: "long", day: "numeric", month: "long" }).format(new Date())} />
+      <div className="mb-5">
+        <p className="text-sm capitalize text-muted">{new Intl.DateTimeFormat("ru-RU", { timeZone: "Asia/Bishkek", weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
+        <h1 className="font-display text-[22px] font-semibold leading-tight md:text-[28px]">{first ? `${first}, добрый день` : "Добрый день"}</h1>
+      </div>
       {sp.denied ? <div className="mb-4"><Notice tone="warn">Раздел недоступен для вашей роли.</Notice></div> : null}
 
-      {isLead && (
-        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {tiles.map((t) => (
-            <Link key={t.href} href={t.href} className="group rounded-2xl border border-line bg-surface p-4 transition hover:border-primary md:p-5">
-              <t.icon className="text-brand" size={28} />
-              <div className="mt-3 font-semibold">{t.title}</div>
-              <div className="mt-1 text-xs text-muted">{t.text}</div>
-            </Link>
-          ))}
+      {tiles.length > 0 && (
+        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {tiles.map((t) => {
+            const Icon = iconOf(t.icon);
+            return (
+              <Link key={t.href} href={t.href} className="rounded-2xl border border-line bg-surface p-4 transition active:scale-[.98] md:hover:border-brand">
+                <Icon className="text-brand" size={24} />
+                <div className="mt-2 font-semibold">{t.title}</div>
+                <div className="mt-0.5 text-xs text-muted">{t.text}</div>
+              </Link>
+            );
+          })}
         </div>
       )}
 
-      {isLead && (
-        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Проектов в работе" value={activeProjects.count ?? 0} />
-          <Stat label="Новых заявок" value={(leads.data ?? []).length} tone={(leads.data ?? []).length ? "warn" : undefined} />
-          <Stat label="Просрочено материалов" value={(overdue.data ?? []).length} tone={(overdue.data ?? []).length ? "bad" : "good"} />
-          <Stat label="Платежей на подтверждении" value={pendingPays.count ?? 0} tone={pendingPays.count ? "warn" : undefined} />
+      {(leader || production || finance) && (
+        <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {(leader || production) && <Stat label="Проектов в работе" value={n(projectsActive)} />}
+          {leadsOn && <Stat label="Новых заявок" value={n(leadsNew)} tone={n(leadsNew) ? "warn" : undefined} />}
+          {production && <Stat label="На проверке" value={n(onReview)} />}
+          {production && <Stat label="Просрочено" value={n(overdue)} tone={n(overdue) ? "bad" : "good"} />}
+          {finance && <Stat label="Дебиторка" value={money(receivable)} hint={overdueInvoices ? `просрочено счетов: ${overdueInvoices}` : "без просрочек"} tone={overdueInvoices ? "bad" : undefined} />}
+          {campaigns.count ? <Stat label="Активных кампаний" value={n(campaigns)} /> : null}
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {(pendingEmp.count ?? 0) > 0 && (
-          <Card title="Сотрудники ждут утверждения">
-            <Link href="/app/team?status=pending_approval" className="flex items-center justify-between text-sm">
-              <span>{pendingEmp.count} профиль(ей) ожидают доступа</span> <ArrowRight size={16} />
-            </Link>
-          </Card>
-        )}
-        {(leads.data ?? []).length > 0 && (
-          <Card title="Новые заявки" actions={<Link href="/app/leads" className="text-sm text-primary">Все →</Link>}>
-            <ul className="divide-y divide-line">
-              {(leads.data as { id: string; name: string; phone: string; service: string | null; created_at: string }[]).map((l) => (
-                <li key={l.id} className="py-2">
-                  <Link href={`/app/leads/${l.id}`} className="flex items-center justify-between gap-2 text-sm">
-                    <span><b>{l.name}</b> · {l.service ?? "услуга не выбрана"}</span>
-                    <span className="text-xs text-muted">{dateTime(l.created_at)}</span>
+      {attention.length > 0 && (
+        <section className="mb-5">
+          <h2 className="group-title">Требует внимания</h2>
+          <ul className="grouped">
+            {attention.map((a) => (
+              <li key={a.label}>
+                <Link href={a.href} className="row">
+                  <span className={cn("inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm font-bold", { bad: "bg-bad-soft text-bad", warn: "bg-warn-soft text-warn", info: "bg-info-soft text-info" }[a.tone])}>{a.n}</span>
+                  <span className="min-w-0 flex-1">{a.label}</span>
+                  <ChevronRight size={18} className="shrink-0 text-muted" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="mb-5">
+        <div className="mb-2 flex items-center justify-between gap-2 px-1">
+          <h2 className="text-base font-semibold">Сегодня у меня{myTotal ? ` · ${myTotal}` : ""}</h2>
+          <Link href="/app/today" className="text-sm font-semibold text-primary">Все задачи</Link>
+        </div>
+        {mine.length === 0 ? (
+          <div className="rounded-2xl border border-line bg-surface p-4">
+            <p className="font-semibold text-good">Свободен от назначенных задач сегодня</p>
+            <p className="mt-1 text-sm text-muted">Незавершённых задач и материалов со сроком на сегодня нет. Это не значит, что материалы уже опубликованы — статусы видны в контент-плане.</p>
+          </div>
+        ) : (
+          <>
+            <ul className="grouped">
+              {mine.map((i) => (
+                <li key={i.key}>
+                  <Link href={i.href} className="row">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{i.title}</span>
+                      {i.sub && <span className="block truncate text-[13px] text-muted">{i.sub}</span>}
+                    </span>
+                    {overdueText(i.due) ? <Badge tone="bad">{overdueText(i.due)}</Badge> : <span className="shrink-0 text-[13px] tabular-nums text-muted">{i.due ? `до ${time(i.due)}` : ""}</span>}
                   </Link>
                 </li>
               ))}
             </ul>
-          </Card>
+            {myTotal > mine.length && <p className="mt-2 px-1 text-xs text-muted">И ещё {myTotal - mine.length} — в разделе «Задачи».</p>}
+            <SubmitWorkButton className="mt-3 w-full" />
+          </>
         )}
-        <Card title="Мои материалы" actions={<Link href="/app/today" className="text-sm text-primary">Сегодня →</Link>}>
-          {(myContent.data ?? []).length === 0 && (myTasks.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted">Активных назначений нет.</p>
-          ) : (
-            <ul className="divide-y divide-line">
-              {(myContent.data as unknown as { id: string; title: string; kind: string; status: string; prep_due: string | null; projects: { name: string } | null }[]).map((c) => (
-                <li key={c.id} className="py-2">
-                  <Link href={`/app/content/${c.id}`} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="min-w-0 truncate">{CONTENT_KIND[c.kind]}: {c.title} <span className="text-muted">· {c.projects?.name}</span></span>
-                    {overdueText(c.prep_due) ? <Badge tone="bad">{overdueText(c.prep_due)}</Badge> : <Badge status={c.status}>{CONTENT_STATUS[c.status]}</Badge>}
-                  </Link>
-                </li>
-              ))}
-              {(myTasks.data as { id: string; title: string; due_at: string | null; status: string }[]).map((t) => (
-                <li key={t.id} className="py-2">
-                  <Link href={`/app/tasks/${t.id}`} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">Задача: {t.title}</span>
-                    {overdueText(t.due_at) ? <Badge tone="bad">{overdueText(t.due_at)}</Badge> : <span className="text-xs text-muted">{dateTime(t.due_at)}</span>}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        {(overdue.data ?? []).length > 0 && (
-          <Card title="Критические просрочки">
-            <ul className="divide-y divide-line">
-              {(overdue.data as unknown as { id: string; title: string; kind: string; prep_due: string; projects: { name: string } | null }[]).map((c) => (
-                <li key={c.id} className="py-2">
-                  <Link href={`/app/content/${c.id}`} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">{c.projects?.name}: {c.title}</span>
-                    <Badge tone="bad">{overdueText(c.prep_due)}</Badge>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-        {(shoots.data ?? []).length > 0 && (
-          <Card title="Съёмки сегодня и завтра" actions={<Link href="/app/shoots" className="text-sm text-primary">Все →</Link>}>
-            <ul className="divide-y divide-line">
-              {(shoots.data as unknown as { id: string; title: string; starts_at: string; location: string | null; projects: { name: string } | null }[]).map((sh) => (
-                <li key={sh.id} className="py-2">
-                  <Link href={`/app/shoots/${sh.id}`} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">{sh.projects?.name}: {sh.title}</span>
-                    <span className="text-xs text-muted">{dateTime(sh.starts_at)} · {sh.location ?? "место не указано"}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-        {(invoices.data ?? []).length > 0 && (
-          <Card title="Неоплаченные счета" actions={<Link href="/app/finance" className="text-sm text-primary">Бухгалтерия →</Link>}>
-            <ul className="divide-y divide-line">
-              {(invoices.data as { id: string; title: string; amount_minor: number; paid_minor: number; due_on: string; pay_state: string; project_id: string }[]).map((i) => (
-                <li key={i.id} className="py-2">
-                  <Link href={`/app/projects/${i.project_id}?tab=finance`} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">{i.title} · остаток {money(i.amount_minor - i.paid_minor)}</span>
-                    <Badge status={i.pay_state}>{i.pay_state === "overdue" ? "Просрочено" : `до ${new Date(i.due_on).toLocaleDateString("ru-RU")}`}</Badge>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-      </div>
-      <p className="mt-6 text-xs text-muted">Статусы проектов: {Object.values(PROJECT_STATUS).slice(0, 0).join("")}Данные обновляются в реальном времени для уведомлений · {time(new Date())}</p>
+      </section>
+
+      {production && (overduePreview.data ?? []).length > 0 && (
+        <section className="mb-5">
+          <h2 className="group-title">Критические просрочки</h2>
+          <ul className="grouped">
+            {((overduePreview.data ?? []) as unknown as { id: string; title: string; prep_due: string; projects: { name: string } | null }[]).map((c) => (
+              <li key={c.id}>
+                <Link href={`/app/content/${c.id}`} className="row">
+                  <span className="min-w-0 flex-1"><span className="block truncate font-medium">{c.title}</span><span className="block truncate text-[13px] text-muted">{c.projects?.name}</span></span>
+                  <Badge tone="bad">{overdueText(c.prep_due)}</Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {production && (shoots.data ?? []).length > 0 && (
+        <section className="mb-5">
+          <h2 className="group-title">Съёмки сегодня и завтра</h2>
+          <ul className="grouped">
+            {((shoots.data ?? []) as unknown as { id: string; title: string; starts_at: string; location: string | null; projects: { name: string } | null }[]).map((sh) => (
+              <li key={sh.id}>
+                <Link href={`/app/shoots/${sh.id}`} className="row">
+                  <span className="w-[72px] shrink-0 text-[13px] font-semibold tabular-nums">{dateTime(sh.starts_at).slice(0, 5)} {time(sh.starts_at)}</span>
+                  <span className="min-w-0 flex-1"><span className="block truncate font-medium">{sh.title}</span><span className="block truncate text-[13px] text-muted">{[sh.projects?.name, sh.location].filter(Boolean).join(" · ") || "место не указано"}</span></span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {leadsOn && (leadsPreview.data ?? []).length > 0 && (
+        <section className="mb-5">
+          <div className="mb-2 flex items-center justify-between px-1"><h2 className="text-base font-semibold">Новые заявки</h2><Link href="/app/leads" className="text-sm font-semibold text-primary">Все</Link></div>
+          <ul className="grouped">
+            {((leadsPreview.data ?? []) as { id: string; name: string; service: string | null; created_at: string }[]).map((l) => (
+              <li key={l.id}>
+                <Link href={`/app/leads/${l.id}`} className="row">
+                  <span className="min-w-0 flex-1"><span className="block truncate font-medium">{l.name}</span><span className="block truncate text-[13px] text-muted">{l.service ?? "услуга не выбрана"}</span></span>
+                  <span className="shrink-0 text-[13px] text-muted">{dateTime(l.created_at)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }
