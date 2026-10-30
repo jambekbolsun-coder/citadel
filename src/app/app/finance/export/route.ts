@@ -34,6 +34,6 @@ export async function GET(req: NextRequest) {
   } else return new NextResponse("Unknown export", { status: 400 });
   await supabase.from("export_history").insert({ user_id: u.user.id, kind: type, params: { from, to } });
   return new NextResponse(body, {
-    headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="citadel-${type}-${from}_${to}.csv"`, "Cache-Control": "private, no-store" },
+    headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="smm-kadr-${type}-${from}_${to}.csv"`, "Cache-Control": "private, no-store" },
   });
 }

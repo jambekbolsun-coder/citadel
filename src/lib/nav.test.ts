@@ -81,7 +81,10 @@ describe("меню «+»", () => {
   });
   it("управляющий видит производственные действия", () => {
     const k = keys(viewer("manager"));
-    for (const x of ["submit", "task", "shoot", "project", "invite", "client", "lead"]) expect(k).toContain(x);
+    for (const x of ["submit", "task", "shoot", "project", "invite", "lead"]) expect(k).toContain(x);
+    // клиент заводится внутри мастера проекта — отдельного пункта «Добавить клиента» в «+» нет
+    expect(k).not.toContain("client");
+    expect(k[0]).toBe("project");
     expect(k).not.toContain("expense");
   });
   it("у «Сдать работу» нет ссылки — открывается панель сдачи; у остальных есть маршрут", () => {
@@ -119,7 +122,7 @@ describe("настройки", () => {
 
 describe("верхняя панель", () => {
   it("короткий заголовок по адресу", () => {
-    expect(titleFor("/app")).toBe("Цитадель");
+    expect(titleFor("/app")).toBe("SMM KADR");
     expect(titleFor("/app/tasks/123")).toBe("Поручения");
     expect(titleFor("/app/settings/roles")).toBe("Роли и права");
     expect(titleFor("/app/settings/pay")).toBe("Мои выплаты");

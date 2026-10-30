@@ -1,5 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+export type { Slide, SlideImage, SlideStat, PublicTariff } from "@/lib/site-model";
+import type { PublicTariff } from "@/lib/site-model";
 
 export type Block = { key: string; type: string; sort: number; visible: boolean; content: Record<string, unknown> };
 
@@ -21,15 +23,3 @@ export async function loadSite(mode: "published" | "draft" = "published") {
     .filter((b) => b.visible);
   return { blocks: list, settings: settings ?? {}, tariffs: (tariffs ?? []) as PublicTariff[] };
 }
-
-export type PublicTariff = {
-  id: string;
-  code: string;
-  name: string;
-  price_on_request: boolean;
-  price_minor: number | null;
-  currency: string;
-  period_type: string;
-  composition: Record<string, number>;
-  description: string | null;
-};

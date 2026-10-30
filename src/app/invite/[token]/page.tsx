@@ -50,7 +50,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
 
   if (!session) {
     return (
-      <AuthShell title="Присоединиться к «Цитадели»" subtitle={`Используйте email, на который выписано приглашение (${p.email_hint})`}>
+      <AuthShell title="Присоединиться к SMM KADR" subtitle={`Используйте email, на который выписано приглашение (${p.email_hint})`}>
         {intro}
         <ActionForm action={signUp} className="space-y-4">
           <input type="hidden" name="next" value={`/invite/${token}`} />

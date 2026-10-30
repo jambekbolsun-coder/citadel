@@ -33,7 +33,7 @@ export default async function ClientReport({ params, searchParams }: PageProps<"
       <div className="no-print mb-6 flex justify-end"><PrintButton /></div>
       <div className="flex items-center justify-between border-b pb-4">
         <div><div className="text-2xl font-bold">Отчёт о выполненных работах</div><div className="text-sm text-gray-600">{p.name} · период {period.label}</div></div>
-        <Image src="/logo.webp" alt="" width={56} height={56} className="rounded-xl" />
+        <Image src="/brand/logo-horizontal.svg" alt="SMM KADR" width={180} height={35} unoptimized />
       </div>
       <p className="mt-4 text-sm">Заказчик: <b>{client?.company_name}</b>{client?.contact_name ? `, ${client.contact_name}` : ""}. Исполнитель: SMM KADR.</p>
       <table className="mt-6 w-full border-collapse text-sm">

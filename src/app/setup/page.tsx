@@ -18,7 +18,7 @@ export default async function Setup() {
   if (session) {
     return (
       <AuthShell title="Назначение владельца" subtitle={`Аккаунт: ${session.email}`}>
-        <Notice>Вы станете единственным владельцем «Цитадели». Дальше сотрудники добавляются только через QR-приглашения.</Notice>
+        <Notice>Вы станете единственным владельцем SMM KADR. Дальше сотрудники добавляются только через QR-приглашения.</Notice>
         <ActionForm action={claimOwner} className="mt-4 space-y-4">
           <Field label="ФИО владельца">
             <input name="full_name" required defaultValue={session.profile?.full_name ?? ""} className="input" />

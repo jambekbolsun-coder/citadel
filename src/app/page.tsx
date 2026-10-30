@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { loadSite } from "@/lib/site";
-import { SiteView } from "@/components/site-view";
+import { SiteView } from "@/components/site/site-view";
 
 export const dynamic = "force-dynamic";
 

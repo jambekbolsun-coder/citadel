@@ -68,7 +68,7 @@ export function InstallButton({ className }: { className?: string }) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 md:items-center" role="dialog" aria-modal="true" onClick={() => setOpen(false)}>
           <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold">Установка «Цитадели»</h3>
+              <h3 className="font-semibold">Установка SMM KADR</h3>
               <button aria-label="Закрыть" onClick={() => setOpen(false)} className="text-muted"><X size={18} /></button>
             </div>
             {ios ? (

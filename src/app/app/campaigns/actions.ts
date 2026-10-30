@@ -84,7 +84,7 @@ export const setCampaignStatus = action(async (fd) => {
   const id = str(fd, "id");
   const r = check(await supabase.rpc("campaign_set_status", { p_campaign: id, p_status: str(fd, "status"), p_effective_on: opt(fd, "effective_on"), p_reason: opt(fd, "reason") })) as { changed: boolean };
   refresh(id);
-  return r.changed ? "Статус отмечен в Цитадели. В рекламном кабинете его нужно изменить вручную." : "Статус уже такой — ничего не меняли";
+  return r.changed ? "Статус отмечен в SMM KADR. В рекламном кабинете его нужно изменить вручную." : "Статус уже такой — ничего не меняли";
 });
 
 export const addCreative = action(async (fd) => {

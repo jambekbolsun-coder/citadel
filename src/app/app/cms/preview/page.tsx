@@ -1,6 +1,6 @@
 import { requireActive } from "@/lib/auth";
 import { loadSite } from "@/lib/site";
-import { SiteView } from "@/components/site-view";
+import { SiteView } from "@/components/site/site-view";
 
 export const metadata = { title: "Предпросмотр сайта" };
 

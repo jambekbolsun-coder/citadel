@@ -1,4 +1,4 @@
-// Цитадель — рассылка Web Push. Вызывается только из базы (pg_net) с секретом из Vault.
+// SMM KADR — рассылка Web Push. Вызывается только из базы (pg_net) с секретом из Vault.
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 

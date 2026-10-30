@@ -1,17 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Unbounded } from "next/font/google";
+import { Manrope, Montserrat } from "next/font/google";
 import { SwRegister } from "@/components/pwa";
 import "./globals.css";
 
 const ui = Manrope({ variable: "--font-ui", subsets: ["latin", "cyrillic"] });
-const display = Unbounded({ variable: "--font-display-face", subsets: ["latin", "cyrillic"], weight: ["500", "600", "700"] });
+// Montserrat — шрифт надписи в логотипе SMM KADR; крупные заголовки приложения и сайта.
+const display = Montserrat({ variable: "--font-display-face", subsets: ["latin", "cyrillic"], weight: ["600", "700", "800"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: { default: "Цитадель", template: "%s · Цитадель" },
-  description: "Операционная платформа SMM KADR",
-  applicationName: "Цитадель",
-  appleWebApp: { capable: true, title: "Цитадель", statusBarStyle: "black-translucent" },
+  title: { default: "SMM KADR", template: "%s · SMM KADR" },
+  description: "SMM KADR — маркетинг, который продаёт: контент, таргет, команда. Рабочее приложение агентства.",
+  applicationName: "SMM KADR",
+  appleWebApp: { capable: true, title: "SMM KADR", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
 };
 

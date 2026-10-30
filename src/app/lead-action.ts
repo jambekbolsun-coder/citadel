@@ -20,6 +20,7 @@ export async function submitLead(_prev: ActionState, fd: FormData): Promise<Acti
       email: String(fd.get("email") ?? ""),
       business: String(fd.get("business") ?? ""),
       service: String(fd.get("service") ?? ""),
+      tariff_code: String(fd.get("tariff_code") ?? ""),
       comment: String(fd.get("comment") ?? ""),
       preferred_time: String(fd.get("preferred_time") ?? ""),
       consent: fd.get("consent") === "on",

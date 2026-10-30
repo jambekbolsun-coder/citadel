@@ -17,7 +17,7 @@ export default async function AppInfo() {
         </Card>
         <Card title="О приложении">
           <dl className="grid gap-2 text-sm">
-            <div className="flex justify-between gap-3"><dt className="text-muted">Название</dt><dd>Цитадель · SMM KADR</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted">Название</dt><dd>SMM KADR</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">Версия</dt><dd>{APP_VERSION}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">Данные</dt><dd className="text-right">Приватные страницы не сохраняются в кэше устройства</dd></div>
           </dl>

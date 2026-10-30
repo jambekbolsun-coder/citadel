@@ -320,7 +320,7 @@ async function AddCreative({ camp, people }: { camp: Campaign; people: Person[] 
         <Field label="Заметка"><input name="note" className="input" /></Field>
         <div className="sm:col-span-2"><Submit className="w-full">Добавить видео</Submit></div>
       </ActionForm>
-      <p className="mt-2 text-xs text-muted">Включённое здесь видео — отметка в учёте Цитадели. Запустить или остановить рекламу нужно в кабинете площадки.</p>
+      <p className="mt-2 text-xs text-muted">Включённое здесь видео — отметка в учёте SMM KADR. Запустить или остановить рекламу нужно в кабинете площадки.</p>
     </Card>
   );
 }

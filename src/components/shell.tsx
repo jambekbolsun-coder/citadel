@@ -28,10 +28,10 @@ export function Sidebar({ items, user }: { items: NavItem[]; user: { name: strin
   return (
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface md:flex">
       <Link href="/app" className="flex items-center gap-2.5 px-4 pt-4 pb-3">
-        <Image src="/logo.webp" alt="" width={34} height={34} className="rounded-lg" />
+        <Image src="/icons/icon-192.png" alt="" width={34} height={34} className="rounded-[10px]" />
         <div className="leading-tight">
-          <div className="font-display text-[15px] font-semibold">Цитадель</div>
-          <div className="text-[11px] text-muted">SMM KADR</div>
+          <div className="font-display text-[16px] font-extrabold tracking-tight">SMM KADR</div>
+          <div className="text-[11px] text-muted">Рабочее пространство</div>
         </div>
       </Link>
       <div className="px-3 pb-2">

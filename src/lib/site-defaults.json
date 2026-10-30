@@ -1,0 +1,313 @@
+[
+  {
+    "key": "p01_hero",
+    "sort": 10,
+    "content": {
+      "layout": "hero",
+      "anchor": "top",
+      "rubric": "КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ",
+      "pill": "SMM KADR / 2026",
+      "title": "МАРКЕТИНГ,\nКОТОРЫЙ\nПРОДАЁТ.",
+      "lead": "КОНТЕНТ. ТАРГЕТ. КОМАНДА.",
+      "lead_accent": true,
+      "badge": "ТАРИФЫ ОТ 10 500 СОМ",
+      "card": { "kicker": "", "title": "SMM KADR", "text": "СТРАТЕГИЯ / ВИДЕО / ТАРГЕТ / ДИЗАЙН" },
+      "cta": { "label": "ОБСУДИТЬ ПРОЕКТ", "action": "lead" },
+      "cta2": { "label": "СМОТРЕТЬ ТАРИФЫ", "action": "tariffs" },
+      "image_style": "hero",
+      "images": [
+        { "src": "/site/equipment.webp", "alt": "Съёмочное оборудование SMM KADR: камера, дрон, стабилизаторы, петлички, DJI" },
+        { "src": "/site/phone-smm-kadr.webp", "alt": "Профиль @smm_kadr в Instagram" },
+        { "src": "/site/phone-smm-kadr-2.webp", "alt": "Лента публикаций @smm_kadr" }
+      ]
+    }
+  },
+  {
+    "key": "p02_team",
+    "sort": 20,
+    "content": {
+      "layout": "default",
+      "anchor": "services",
+      "rubric": "КОМАНДА НА АУТСОРСЕ",
+      "title": "6 СПЕЦИАЛИСТОВ.",
+      "title_accent": "ОДНА КОМАНДА.",
+      "lead": "Дешевле, чем содержать собственный отдел маркетинга.",
+      "stats_style": "team",
+      "stats": [
+        { "value": "01", "label": "МАРКЕТОЛОГ" },
+        { "value": "02", "label": "ТАРГЕТОЛОГ" },
+        { "value": "03", "label": "СЦЕНАРИСТ" },
+        { "value": "04", "label": "АМБАССАДОР" },
+        { "value": "05", "label": "МОБИЛОГРАФ" },
+        { "value": "06", "label": "ГРАФ. ДИЗАЙНЕР" }
+      ],
+      "image_style": "panel",
+      "images": [
+        { "src": "/site/partners.webp", "alt": "Наши партнёры: Fashion Mall, Ала-Тоо Бишкек, ERA, Асман, Flavis, 2GIS и другие", "caption": "НАМ ДОВЕРЯЮТ БИЗНЕСЫ КЫРГЫЗСТАНА" }
+      ]
+    }
+  },
+  {
+    "key": "p03_once",
+    "sort": 30,
+    "content": {
+      "layout": "default",
+      "anchor": "tariffs",
+      "rubric": "РАЗОВЫЙ ЗАПУСК",
+      "pill": "ПРОВЕРИТЬ ОФФЕР И ЗАПУСТИТЬ РЕКЛАМУ",
+      "title": "РАЗОВЫЙ",
+      "tariff_code": "one_time_launch",
+      "price": "10 500",
+      "price_unit": "СОМ / РАЗОВО",
+      "bullets": ["1 ВИДЕО ДЛЯ ТАРГЕТА", "СЦЕНАРИЙ", "НАСТРОЙКА ТАРГЕТА", "БЕЗ АМБАССАДОРА"],
+      "card": { "kicker": "БЫСТРЫЙ СТАРТ", "title": "Готовый ролик + реклама", "text": "Проверяем спрос без месячного тарифа." },
+      "cta": { "label": "ВЫБРАТЬ ТАРИФ", "action": "lead" },
+      "image_style": "object",
+      "images": [{ "src": "/site/equipment.webp", "alt": "Камера, дрон и стабилизаторы для съёмки рекламного ролика" }]
+    }
+  },
+  {
+    "key": "p04_startup",
+    "sort": 40,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "СТАРТАП",
+      "pill": "ПРОФИЛЬ + КОНТЕНТ + РЕКЛАМА",
+      "title": "СТАРТАП",
+      "tariff_code": "startup",
+      "price": "15 500",
+      "price_unit": "СОМ / РАЗОВО",
+      "bullets": ["2 ВИДЕО", "СЦЕНАРИИ И ТАРГЕТ", "ПОЛНОЕ ОФОРМЛЕНИЕ", "ГРАФИЧЕСКИЙ ДИЗАЙН", "2 ГОТОВЫХ ПОСТА"],
+      "card": { "kicker": "", "title": "10-20 ЛИДОВ КАЖДЫЙ ДЕНЬ*", "title_accent": true, "text": "Условия гарантии закрепляем в договоре." },
+      "footnote": "*При согласованном бюджете, сроке и критериях целевого лида.",
+      "cta": { "label": "ВЫБРАТЬ ТАРИФ", "action": "lead" },
+      "image_style": "phone",
+      "images": [{ "src": "/site/phone-smm-kadr-2.webp", "alt": "Пример оформленного профиля в Instagram" }]
+    }
+  },
+  {
+    "key": "p05_pro",
+    "sort": 50,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ТАРИФ ПРО",
+      "pill": "ВИДЕОКОНТЕНТ КАЖДЫЙ МЕСЯЦ",
+      "title": "ПРО",
+      "tariff_code": "pro",
+      "price": "43 999",
+      "price_unit": "СОМ / МЕСЯЦ",
+      "stats_style": "big",
+      "stats": [{ "value": "05", "label": "ВИДЕО / МЕСЯЦ", "note": "Без ведения сторис" }],
+      "chips_title": "КОМАНДА ВНУТРИ ТАРИФА",
+      "chips": ["ТАРГЕТОЛОГ", "СЦЕНАРИСТ", "МАРКЕТОЛОГ", "АМБАССАДОР", "МОБИЛОГРАФ", "ГРАФ. ДИЗАЙН"],
+      "note": "Сценарии, съёмка, дизайн и реклама - в одной системе.",
+      "cta": { "label": "ВЫБРАТЬ ТАРИФ", "action": "lead" },
+      "image_style": "phone",
+      "images": [{ "src": "/site/phone-smm-kadr.webp", "alt": "Профиль @smm_kadr в Instagram" }]
+    }
+  },
+  {
+    "key": "p06_promax",
+    "sort": 60,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ТАРИФ ПРО МАКС",
+      "pill": "БОЛЬШЕ ВИДЕО ДЛЯ РЕКЛАМЫ",
+      "title": "ПРО МАКС",
+      "tariff_code": "pro_max",
+      "price": "60 000",
+      "price_unit": "СОМ / МЕСЯЦ",
+      "stats_style": "big",
+      "stats": [{ "value": "08", "label": "ВИДЕО / МЕСЯЦ" }, { "value": "120 СТОРИС", "label": "", "note": "4 каждый день" }],
+      "chips_title": "КОМАНДА ВНУТРИ ТАРИФА",
+      "chips": ["ТАРГЕТОЛОГ", "СЦЕНАРИСТ", "МАРКЕТОЛОГ", "АМБАССАДОР", "МОБИЛОГРАФ", "ГРАФ. ДИЗАЙН"],
+      "cta": { "label": "ВЫБРАТЬ ТАРИФ", "action": "lead" },
+      "image_style": "phone",
+      "images": [{ "src": "/site/phone-vent-fasad.webp", "alt": "Профиль клиента Vent Fasad в Instagram" }]
+    }
+  },
+  {
+    "key": "p07_ultra",
+    "sort": 70,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ТАРИФ УЛЬТРА",
+      "pill": "МАКСИМУМ КОНТЕНТА И КОМАНДЫ",
+      "title": "УЛЬТРА",
+      "tariff_code": "ultra",
+      "price": "80 000",
+      "price_unit": "СОМ / МЕСЯЦ",
+      "stats_style": "big",
+      "stats": [{ "value": "10", "label": "ВИДЕО / МЕСЯЦ" }, { "value": "120 СТОРИС", "label": "", "note": "4 каждый день" }],
+      "chips_title": "КОМАНДА ВНУТРИ ТАРИФА",
+      "chips": ["ТАРГЕТОЛОГ", "СЦЕНАРИСТ", "МАРКЕТОЛОГ", "АМБАССАДОР", "МОБИЛОГРАФ", "ГРАФ. ДИЗАЙН"],
+      "cta": { "label": "ВЫБРАТЬ ТАРИФ", "action": "lead" },
+      "image_style": "phone",
+      "images": [{ "src": "/site/phone-kausar.webp", "alt": "Профиль клиента Kausar Building в Instagram" }]
+    }
+  },
+  {
+    "key": "p08_yearly",
+    "sort": 80,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ГОДОВАЯ ПОДПИСКА / 300 000",
+      "pill": "ТОЛЬКО У НАС В КЫРГЫЗСТАНЕ",
+      "title": "",
+      "tariff_code": "yearly",
+      "price": "80 000 → 25 000",
+      "price_unit": "СОМ / МЕСЯЦ",
+      "price_accent": true,
+      "stats_style": "grid",
+      "stats": [
+        { "value": "300 000 СОМ", "label": "ОДНИМ ПЛАТЕЖОМ ЗА 12 МЕСЯЦЕВ", "wide": true, "plain": true },
+        { "value": "120", "label": "ВИДЕО В ГОД" },
+        { "value": "1 440", "label": "СТОРИС В ГОД", "note": "4 каждый день" }
+      ],
+      "card": { "kicker": "", "title": "СТАТУС ИНВЕСТОРА", "title_accent": true, "text": "Статус и условия закрепляем соглашением." },
+      "badge": "ПОЛНАЯ КОМАНДА ВКЛЮЧЕНА",
+      "cta": { "label": "ВЫБРАТЬ ТАРИФ", "action": "lead" },
+      "image_style": "phone",
+      "images": [{ "src": "/site/phone-smm-kadr.webp", "alt": "Профиль @smm_kadr в Instagram" }]
+    }
+  },
+  {
+    "key": "p09_construction",
+    "sort": 90,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ДЛЯ СТРОИТЕЛЬНЫХ КОМПАНИЙ",
+      "pill": "ПРОДАКШН + МОБИЛЬНЫЙ КОНТЕНТ",
+      "title": "",
+      "tariff_code": "construction",
+      "price": "500 000 СОМ",
+      "price_unit": "ЗА ГОД / ВМЕСТО 100 000 СОМ В МЕСЯЦ",
+      "price_accent": true,
+      "stats_style": "grid",
+      "stats": [
+        { "value": "08", "label": "ВИДЕО / МЕСЯЦ" },
+        { "value": "120", "label": "СТОРИС / МЕСЯЦ", "note": "1 440 в год" }
+      ],
+      "bullets": ["2 ПРОДАКШН-ВИДЕО", "6 МОБИЛЬНЫХ ВИДЕО", "ДО 2 РОЛИКОВ С ДРОНОМ", "DJI OSMO POCKET 4"],
+      "card": { "kicker": "", "title": "ВОЗВРАТ И УСЛОВИЯ - В ДОГОВОРЕ", "title_accent": true, "text": "Тариф для крупных и серьёзных компаний." },
+      "cta": { "label": "ВЫБРАТЬ ТАРИФ", "action": "lead" },
+      "image_style": "object",
+      "images": [{ "src": "/site/equipment.webp", "alt": "Оборудование для продакшн-съёмки: дрон, камера, стабилизаторы" }]
+    }
+  },
+  {
+    "key": "p10_guarantee",
+    "sort": 100,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ДОГОВОР И ГАРАНТИЯ",
+      "pill": "ВСЕ ПРОЕКТЫ - ТОЛЬКО ПО ДОГОВОРУ",
+      "title": "",
+      "price": "400-1 200",
+      "price_unit": "ОБРАЩЕНИЙ В МЕСЯЦ*",
+      "price_accent": true,
+      "price_unit_large": true,
+      "lead": "При рекламном бюджете от $20 в день",
+      "card": { "kicker": "", "title": "МЫ ПРИВОДИМ ОБРАЩЕНИЯ", "title_accent": true, "text": "Продажи зависят от скорости и качества работы менеджеров клиента." },
+      "footnote": "*Диапазон зависит от ниши, цены, оффера и аудитории; критерии фиксируются в договоре.",
+      "image_style": "panel",
+      "images": [{ "src": "/site/report.webp", "alt": "Образец ежемесячного отчёта SMM KADR: лиды, таргет, рост аудитории", "caption": "ТАРГЕТ + АНАЛИТИКА + ОТЧЁТ" }]
+    }
+  },
+  {
+    "key": "p11_equipment",
+    "sort": 110,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ОБОРУДОВАНИЕ",
+      "title": "ТЕХНИКА, КОТОРАЯ",
+      "title_accent": "УСИЛИВАЕТ ВИДЕО.",
+      "card": { "kicker": "", "title": "ВСЁ УЖЕ ВНУТРИ КОМАНДЫ", "title_accent": true, "text": "Дрон / камера / петлички / стабилизатор / DJI" },
+      "image_style": "object",
+      "images": [{ "src": "/site/equipment.webp", "alt": "Оборудование команды: дрон, камера, петлички, стабилизатор, DJI" }]
+    }
+  },
+  {
+    "key": "p12_report",
+    "sort": 120,
+    "content": {
+      "layout": "default",
+      "anchor": "",
+      "rubric": "ОТЧЁТ И АКТ",
+      "title": "ВИДНО,",
+      "title_accent": "ЗА ЧТО ВЫ ПЛАТИТЕ.",
+      "lead": "Каждый месяц: визуальный отчёт + акт выполненных работ.",
+      "icons": [
+        { "icon": "instagram", "label": "Instagram" },
+        { "icon": "target", "label": "Таргет" },
+        { "icon": "chart", "label": "Фото" },
+        { "icon": "ads", "label": "ADS" }
+      ],
+      "image_style": "panel",
+      "images": [{ "src": "/site/report.webp", "alt": "Образец визуального отчёта за месяц (макет интерфейса отчёта)", "caption": "РЕЗУЛЬТАТ В ЦИФРАХ" }]
+    }
+  },
+  {
+    "key": "p13_cases",
+    "sort": 130,
+    "content": {
+      "layout": "default",
+      "anchor": "cases",
+      "rubric": "РЕАЛЬНЫЕ ПРОЕКТЫ",
+      "title": "НЕ МАКЕТЫ.",
+      "title_accent": "РЕАЛЬНЫЕ ПРОФИЛИ.",
+      "card": { "kicker": "", "title": "ПРОФИЛЬ - ВИТРИНА БИЗНЕСА", "text": "Контент, дизайн и реклама работают вместе.", "text_accent": true },
+      "image_style": "phones",
+      "images": [
+        { "src": "/site/phone-kausar.webp", "alt": "Instagram-профиль Kausar Building", "caption": "KAUSAR", "sub": "СТРОИТЕЛЬСТВО" },
+        { "src": "/site/phone-vent-fasad.webp", "alt": "Instagram-профиль Vent Fasad", "caption": "VENT FASAD", "sub": "ГОДОВОЙ КЛИЕНТ" },
+        { "src": "/site/phone-edil.webp", "alt": "Instagram-профиль Edil Machinary", "caption": "EDIL", "sub": "СПЕЦТЕХНИКА" }
+      ]
+    }
+  },
+  {
+    "key": "p14_partners",
+    "sort": 140,
+    "content": {
+      "layout": "default",
+      "anchor": "about",
+      "rubric": "ПАРТНЁРЫ И ОПЫТ",
+      "title": "НАМ ДОВЕРЯЮТ",
+      "title_accent": "СИЛЬНЫЕ БРЕНДЫ.",
+      "stats_style": "grid3",
+      "stats": [
+        { "value": "7", "label": "ЛЕТ ОПЫТА" },
+        { "value": "300+", "label": "ПРОЕКТОВ" },
+        { "value": "1", "label": "КОМАНДА" }
+      ],
+      "card": { "kicker": "", "title": "МАРКЕТИНГ НА АУТСОРСЕ", "title_accent": true, "text": "Системно. Прозрачно. По договору." },
+      "image_style": "panel",
+      "images": [{ "src": "/site/partners.webp", "alt": "Наши партнёры: Fashion Mall, Ала-Тоо Бишкек, ERA, Асман, Flavis, 2GIS и другие" }]
+    }
+  },
+  {
+    "key": "p15_contacts",
+    "sort": 150,
+    "content": {
+      "layout": "contact",
+      "anchor": "contacts",
+      "rubric": "СЛЕДУЮЩИЙ ШАГ",
+      "pill": "БЕСПЛАТНАЯ КОНСУЛЬТАЦИЯ",
+      "title": "ВАШ БРЕНД\nМОЖЕТ ПОЛУЧАТЬ\nБОЛЬШЕ ЗАЯВОК.",
+      "lead": "Подберём тариф и план первого запуска.",
+      "lead_accent": true,
+      "cta": { "label": "ОБСУДИТЬ ПРОЕКТ", "action": "lead" },
+      "card": { "kicker": "", "title": "SMM KADR", "text": "МАРКЕТИНГ, КОТОРЫЙ ПРОДАЁТ", "text_accent": true },
+      "image_style": "phone",
+      "images": [{ "src": "/site/phone-smm-kadr.webp", "alt": "Профиль @smm_kadr в Instagram" }]
+    }
+  }
+]

@@ -36,7 +36,7 @@ export default async function Campaigns({ searchParams }: PageProps<"/app/campai
     <>
       <PageHeader
         title={all ? "Рекламные проекты" : "Мои проекты"}
-        subtitle="Ручной учёт рекламы: статусы и расходы вносит сотрудник. Интеграций с рекламными кабинетами нет — Цитадель ничего не включает и не выключает на площадках."
+        subtitle="Ручной учёт рекламы: статусы и расходы вносит сотрудник. Интеграций с рекламными кабинетами нет — SMM KADR ничего не включает и не выключает на площадках."
         actions={s.can("campaigns.manage") ? <Link href="/app/campaigns/new" className={btn("primary")}><Plus size={18} />Кампания</Link> : null}
       />
       {res.error ? (

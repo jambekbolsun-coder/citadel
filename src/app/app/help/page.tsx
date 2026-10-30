@@ -15,7 +15,7 @@ export default async function Help({ searchParams }: PageProps<"/app/help">) {
   const found = searchHelp(q);
   return (
     <>
-      <PageHeader back="/app/settings" title="Как пользоваться Цитаделью" subtitle="Короткие пошаговые инструкции для каждой роли. Ссылки ведут только в разделы, открытые вам." />
+      <PageHeader back="/app/settings" title="Как пользоваться SMM KADR" subtitle="Короткие пошаговые инструкции для каждой роли. Ссылки ведут только в разделы, открытые вам." />
       <form role="search" className="mb-5 flex gap-2">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">Поиск по инструкциям</span>

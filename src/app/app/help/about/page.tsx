@@ -15,8 +15,8 @@ export default async function About() {
       <div className="mx-auto max-w-xl space-y-4">
         <div className="flex flex-col items-center pt-2 text-center">
           <Image src="/icons/icon-192.png" alt="" width={88} height={88} className="rounded-[22px]" />
-          <h2 className="mt-3 font-display text-[22px] font-semibold">Цитадель</h2>
-          <p className="text-sm text-muted">Система управления компанией SMM KADR</p>
+          <h2 className="mt-3 font-display text-[22px] font-semibold">SMM KADR</h2>
+          <p className="text-sm text-muted">Рабочая система компании: проекты, команда, клиенты и финансы</p>
           <p className="mt-1 text-xs text-muted">Версия {APP_VERSION}</p>
         </div>
         <Card title="Автор">

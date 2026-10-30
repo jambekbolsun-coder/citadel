@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { data: ownerExists } = await supabase.rpc("owner_exists");
   return (
     <AuthShell
-      title="Вход в Цитадель"
+      title="Вход в SMM KADR"
       subtitle="Рабочее пространство SMM KADR"
       footer={!ownerExists ? <Link href="/setup" className="font-semibold text-primary">Первичная настройка владельца</Link> : <Link href="/reset-password" className="hover:text-ink">Забыли пароль?</Link>}
     >

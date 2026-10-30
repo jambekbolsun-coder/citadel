@@ -11,7 +11,7 @@ export function InviteLinkPanel({ link }: { link: string }) {
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
   useEffect(() => {
-    QRCode.toDataURL(link, { width: 512, margin: 2, color: { dark: "#101a17", light: "#ffffff" } }).then(setQr);
+    QRCode.toDataURL(link, { width: 512, margin: 2, color: { dark: "#0b1640", light: "#ffffff" } }).then(setQr);
   }, [link]);
   return (
     <div className="mt-4 grid gap-4 rounded-2xl border border-line bg-surface-2 p-4 sm:grid-cols-[180px_1fr]">
@@ -23,7 +23,7 @@ export function InviteLinkPanel({ link }: { link: string }) {
           <button type="button" className={btn("secondary")} onClick={() => { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
             <Copy size={16} /> {copied ? "Скопировано" : "Скопировать ссылку"}
           </button>
-          {qr && <a href={qr} download="citadel-invite.png" className={btn("secondary")}><Download size={16} /> Скачать QR</a>}
+          {qr && <a href={qr} download="smm-kadr-invite.png" className={btn("secondary")}><Download size={16} /> Скачать QR</a>}
         </div>
         <p className="text-xs text-muted">Ссылка одноразовая, действует ограниченное время. Email при регистрации должен совпадать с приглашением. Ссылка сама по себе не подтверждает личность — после регистрации профиль утверждает владелец.</p>
       </div>

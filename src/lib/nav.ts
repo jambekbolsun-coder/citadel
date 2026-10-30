@@ -15,7 +15,7 @@ export const NAV: NavItem[] = [
   { href: "/app/checks", label: "Проверки", icon: "shield", group: "Производство" },
   { href: "/app/campaigns", label: "Реклама", icon: "megaphone", perms: ["campaigns.manage", "campaigns.view_all"], group: "Производство" },
   { href: "/app/leads", label: "Заявки и продажи", icon: "inbox", perms: ["leads.view", "leads.receive", "leads.manage"], group: "Продажи" },
-  { href: "/app/clients", label: "Клиенты", icon: "users", perms: ["clients.view", "clients.manage"], group: "Продажи" },
+  { href: "/app/clients", label: "База клиентов", icon: "users", perms: ["clients.view", "clients.manage"], group: "Продажи" },
   { href: "/app/tariffs", label: "Тарифы", icon: "tag", perms: ["tariffs.manage", "prices.view"], group: "Продажи" },
   { href: "/app/cms", label: "Сайт / CMS", icon: "globe", perms: ["cms.manage"], group: "Продажи" },
   { href: "/app/finance", label: "Бухгалтерия", icon: "wallet", perms: ["finance.view", "expenses.create", "payments.confirm", "payments.create"], group: "Финансы" },
@@ -94,14 +94,14 @@ export type PlusAction = { key: string; label: string; hint: string; icon: strin
 
 export function plusActions(v: Viewer): PlusAction[] {
   const a: (PlusAction | false)[] = [
+    // «Добавить проект» — первым: клиент создаётся/выбирается внутри мастера, отдельный путь через «Клиентов» не нужен
+    v.can("projects.create") && { key: "project", label: "Добавить проект", hint: "Клиент, тариф и оплата — 3 шага", icon: "folder", href: "/app/projects/new" },
     { key: "submit", label: "Сдать работу", hint: "Отчитаться по назначенной задаче или материалу", icon: "send" },
     { key: "task", label: "Создать задачу", hint: "Себе или в своём проекте", icon: "check", href: "/app/tasks/new" },
     (v.can("shoots.manage") || v.can("projects.manage")) && { key: "shoot", label: "Запланировать съёмку", hint: "Дата, место, участники", icon: "camera", href: "/app/shoots/new" },
-    v.can("projects.create") && { key: "project", label: "Добавить проект", hint: "Мастер договора и плана", icon: "folder", href: "/app/projects/new" },
     v.can("employees.invite") && { key: "invite", label: "Пригласить сотрудника", hint: "QR-приглашение и условия оплаты", icon: "userplus", href: "/app/team?tab=invite" },
     v.can("campaigns.manage") && { key: "ads", label: "Записать расход рекламы", hint: "Кампания, видео, сумма USD/KGS", icon: "megaphone", href: "/app/campaigns" },
     v.can("expenses.create") && { key: "expense", label: "Добавить расход", hint: "Сумма, категория, чек", icon: "receipt", href: "/app/finance/expense" },
-    v.can("clients.manage") && { key: "client", label: "Добавить клиента", hint: "Компания и контакты", icon: "users", href: "/app/clients#new" },
     allowed(v, "/app/leads") && { key: "lead", label: "Новая заявка", hint: "Звонок или обращение вручную", icon: "inbox", href: "/app/leads#new" },
     { key: "event", label: "Запись в календарь", hint: "Смена, отпуск или занятость", icon: "calendarplus", href: "/app/calendar/new" },
   ];
@@ -138,7 +138,7 @@ export function settingsGroups(v: Viewer): SettingsGroup[] {
         { href: "/app/checks", label: "Проверки проектов", icon: "shield" },
         has("/app/campaigns") && { href: "/app/campaigns", label: "Реклама", icon: "megaphone" },
         has("/app/leads") && { href: "/app/leads", label: "Заявки и продажи", icon: "inbox" },
-        has("/app/clients") && { href: "/app/clients", label: "Клиенты", icon: "users" },
+        has("/app/clients") && { href: "/app/clients", label: "База клиентов", icon: "users" },
         has("/app/reports") && { href: "/app/reports", label: "Отчёты", icon: "chart" },
         has("/app/finance") && { href: "/app/finance", label: "Бухгалтерия", icon: "wallet" },
         has("/app/payroll") && { href: "/app/payroll", label: "Зарплаты", icon: "banknote" },
@@ -185,7 +185,7 @@ export function settingsGroups(v: Viewer): SettingsGroup[] {
 
 /** Заголовок верхней панели по адресу (короткий, без приветствий). */
 export function titleFor(path: string): string {
-  if (path === "/app") return "Цитадель";
+  if (path === "/app") return "SMM KADR";
   const exact: Record<string, string> = {
     "/app/search": "Поиск",
     "/app/settings": "Настройки",
@@ -214,7 +214,7 @@ export function titleFor(path: string): string {
   if (exact[path]) return exact[path];
   if (path.startsWith("/app/help/")) return "Инструкции";
   const item = [...NAV].sort((a, b) => b.href.length - a.href.length).find((i) => i.href !== "/app" && (path === i.href || path.startsWith(i.href + "/")));
-  return item?.label ?? "Цитадель";
+  return item?.label ?? "SMM KADR";
 }
 
 /** Куда ведёт «Назад» с вложенного экрана; null — экран верхнего уровня. */

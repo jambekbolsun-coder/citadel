@@ -1,8 +1,8 @@
-// Цитадель — service worker.
+// SMM KADR — service worker.
 // Безопасная стратегия: кэшируются только статические ресурсы и офлайн-страница.
 // Приватные ответы API, HTML страниц /app и запросы к Supabase НЕ кэшируются.
-const VERSION = "citadel-v2";
-const STATIC = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png", "/logo.webp"];
+const VERSION = "smmkadr-v3";
+const STATIC = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png", "/brand/mark.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(STATIC)));
@@ -47,7 +47,7 @@ self.addEventListener("fetch", (e) => {
 
 // Web Push: приходит и при закрытом приложении (отправляет edge-функция push-dispatch)
 self.addEventListener("push", (e) => {
-  let data = { title: "Цитадель", body: "Новое уведомление", url: "/app/notifications" };
+  let data = { title: "SMM KADR", body: "Новое уведомление", url: "/app/notifications" };
   try {
     data = { ...data, ...e.data.json() };
   } catch {}

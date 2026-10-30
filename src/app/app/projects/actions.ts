@@ -1,98 +1,45 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { action, check, int, opt, str } from "@/lib/actions";
+import { action, check, humanError, int, opt, str } from "@/lib/actions";
 import { parseMoney } from "@/lib/format";
 
 const KINDS = ["video", "story", "post", "carousel", "ad_creative", "shoot"];
 const rp = (id: string) => revalidatePath(`/app/projects/${id}`);
 
-export const createProject = action(async (fd) => {
+export type WizardPayload = Record<string, unknown> & { idempotency_key: string };
+export type WizardResult =
+  | { ok: true; project_id: string; client_id: string; client_created: boolean; payment_id: string | null; repeat?: boolean }
+  | { ok: false; duplicate_client?: { id: string; company_name: string; contact_name: string | null }; error?: string };
+
+/** Мастер «Добавить проект»: клиент + проект + договор + счета + заявленная оплата — одной транзакцией в БД. */
+export async function createProjectWizard(p: WizardPayload): Promise<WizardResult> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("project_wizard_create", { p });
+    if (error) return { ok: false, error: humanError(error) };
+    const r = data as WizardResult;
+    if (r.ok) {
+      revalidatePath("/app/projects");
+      revalidatePath("/app/clients");
+      revalidatePath("/app");
+    }
+    return r;
+  } catch (e) {
+    return { ok: false, error: humanError(e) };
+  }
+}
+
+export type ClientHit = { id: string; company_name: string; contact_name: string | null; phone: string | null; whatsapp: string | null; niche: string | null; socials: Record<string, string>; address: string | null; source: string | null; projects: number; match: "phone" | "name" };
+
+/** Быстрый поиск клиента по телефону, ФИО или компании (для мастера; права проверяет БД). */
+export async function lookupClients(q: string): Promise<ClientHit[]> {
+  const query = q.trim().slice(0, 80);
+  if (query.length < 2) return [];
   const supabase = await createClient();
-  const { data: u } = await supabase.auth.getUser();
-  const uid = u.user!.id;
-  const clientId = str(fd, "client_id");
-  if (!clientId) throw new Error("Выберите клиента");
-  const adminId = str(fd, "admin_id");
-  if (!adminId) throw new Error("Администратор проекта обязателен");
-  const name = str(fd, "name");
-  if (!name) throw new Error("Укажите название проекта");
-
-  // Снимок тарифной версии: договор не меняется при правке прайса
-  const tvId = opt(fd, "tariff_version_id");
-  let snapshot: Record<string, unknown> | null = null;
-  if (tvId) {
-    const { data: tv } = await supabase.from("tariff_versions").select("*, tariffs(name)").eq("id", tvId).single();
-    snapshot = tv;
-  }
-  const composition: Record<string, number> = {};
-  for (const k of KINDS) {
-    const v = int(fd, `c_${k}`);
-    if (v && v > 0) composition[k] = v;
-  }
-  if (!Object.keys(composition).length && snapshot?.composition) Object.assign(composition, snapshot.composition);
-  const price = parseMoney(fd.get("price")) ?? (snapshot?.price_minor as number | undefined) ?? null;
-  if (price === null) throw new Error("Укажите стоимость");
-
-  const project = check(
-    await supabase
-      .from("projects")
-      .insert({
-        name,
-        client_id: clientId,
-        lead_id: opt(fd, "lead_id"),
-        kind: str(fd, "kind"),
-        status: "draft",
-        tariff_version_id: tvId,
-        contract_start: opt(fd, "contract_start"),
-        contract_end: opt(fd, "contract_end"),
-        work_start: opt(fd, "work_start"),
-        renewal_date: opt(fd, "renewal_date"),
-        platforms: fd.getAll("platforms").map(String),
-        revisions_allowed: int(fd, "revisions_allowed"),
-        approval_flow: opt(fd, "approval_flow"),
-        wishes: opt(fd, "wishes"),
-        references_text: opt(fd, "references_text"),
-        socials: { instagram: str(fd, "instagram"), tiktok: str(fd, "tiktok"), facebook: str(fd, "facebook") },
-        stories_method: opt(fd, "stories_method") ?? (snapshot?.stories_method as string | null) ?? null,
-        requires_publication: fd.get("requires_publication") === "on",
-        admin_id: adminId,
-        manager_id: opt(fd, "manager_id"),
-        planning_director_id: opt(fd, "planning_director_id"),
-        creative_director_id: opt(fd, "creative_director_id"),
-        created_by: uid,
-      })
-      .select("id")
-      .single(),
-  ) as { id: string };
-
-  check(
-    await supabase.from("project_contracts").insert({
-      project_id: project.id,
-      price_minor: price,
-      currency: str(fd, "currency") || "KGS",
-      tariff_snapshot: snapshot,
-      composition,
-      extra_services: opt(fd, "extra_services"),
-      payment_terms: opt(fd, "payment_terms"),
-    }),
-  );
-  const members = fd.getAll("team").map(String).filter(Boolean);
-  if (members.length) {
-    await supabase.from("project_members").insert(members.map((m) => ({ project_id: project.id, user_id: m, role: "member" })));
-  }
-  // Счета по графику платежей
-  const inv1 = parseMoney(fd.get("inv1_amount"));
-  if (inv1) {
-    check(await supabase.from("invoices").insert({ project_id: project.id, title: str(fd, "inv1_title") || "Оплата по договору", amount_minor: inv1, due_on: str(fd, "inv1_due") || new Date().toISOString().slice(0, 10), created_by: uid }));
-  }
-  const inv2 = parseMoney(fd.get("inv2_amount"));
-  if (inv2) {
-    check(await supabase.from("invoices").insert({ project_id: project.id, title: str(fd, "inv2_title") || "Второй платёж", amount_minor: inv2, due_on: str(fd, "inv2_due") || new Date().toISOString().slice(0, 10), created_by: uid }));
-  }
-  redirect(`/app/projects/${project.id}`);
-});
+  const { data } = await supabase.rpc("client_lookup", { p_q: query });
+  return (data ?? []) as ClientHit[];
+}
 
 export const setProjectStatus = action(async (fd) => {
   const supabase = await createClient();

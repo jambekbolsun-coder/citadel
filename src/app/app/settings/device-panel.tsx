@@ -161,7 +161,7 @@ export function PushToggle() {
       </div>
       {msg.error && <p role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-bad">{msg.error}</p>}
       {msg.ok && <p role="status" className="rounded-lg bg-good-soft px-3 py-2 text-good">{msg.ok}</p>}
-      {state === "ios-browser" && <p className="text-xs text-muted">Safari → «Поделиться» → «На экран Домой», затем откройте Цитадель с иконки и включите уведомления здесь (iOS 16.4+).</p>}
+      {state === "ios-browser" && <p className="text-xs text-muted">Safari → «Поделиться» → «На экран Домой», затем откройте SMM KADR с иконки и включите уведомления здесь (iOS 16.4+).</p>}
       {state === "denied" && <p className="text-xs text-muted">Разрешите уведомления для этого сайта в настройках браузера и обновите страницу.</p>}
       <p className="text-xs text-muted">Уведомления приходят, даже когда приложение закрыто. Включается отдельно на каждом устройстве. Все уведомления также сохраняются во «Входящих».</p>
     </div>
