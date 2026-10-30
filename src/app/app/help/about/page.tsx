@@ -4,6 +4,8 @@ import { requireActive } from "@/lib/auth";
 import { Card, PageHeader } from "@/components/ui";
 import { AUTHOR_TEXT } from "@/lib/help-content";
 import { APP_VERSION } from "@/lib/version";
+import { APP_ICON } from "@/lib/brand";
+import { ResetAppButton } from "@/components/pwa";
 
 export const metadata = { title: "О приложении" };
 
@@ -14,11 +16,15 @@ export default async function About() {
       <PageHeader back="/app/settings" title="О приложении" />
       <div className="mx-auto max-w-xl space-y-4">
         <div className="flex flex-col items-center pt-2 text-center">
-          <Image src="/icons/icon-192.png" alt="" width={88} height={88} className="rounded-[22px]" />
+          <Image src={APP_ICON} alt="" width={88} height={88} className="rounded-[22px]" />
           <h2 className="mt-3 font-display text-[22px] font-semibold">SMM KADR</h2>
           <p className="text-sm text-muted">Рабочая система компании: проекты, команда, клиенты и финансы</p>
           <p className="mt-1 text-xs text-muted">Версия {APP_VERSION}</p>
         </div>
+        <Card title="Обновление приложения">
+          <p className="text-sm text-muted">Приложение обновляется само при открытии. Если логотип или экран выглядят по-старому, нажмите кнопку — кеш этого устройства очистится и загрузится свежая версия. Вход и данные сохраняются.</p>
+          <ResetAppButton className="mt-3 w-full" />
+        </Card>
         <Card title="Автор">
           <blockquote className="text-[15px] leading-relaxed">{AUTHOR_TEXT}</blockquote>
         </Card>

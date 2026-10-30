@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { backFor, isActive, titleFor, type NavItem, type PlusAction } from "@/lib/nav";
 import { dateTime, overdueText } from "@/lib/format";
 import { loadMyWork, submitWork, type WorkItem } from "@/app/app/work-actions";
+import { APP_ICON } from "@/lib/brand";
 
 export const PLUS_EVENT = "citadel:plus";
 export function openPlus(mode: "menu" | "submit" = "menu") {
@@ -28,7 +29,7 @@ export function Sidebar({ items, user }: { items: NavItem[]; user: { name: strin
   return (
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface md:flex">
       <Link href="/app" className="flex items-center gap-2.5 px-4 pt-4 pb-3">
-        <Image src="/icons/icon-192.png" alt="" width={34} height={34} className="rounded-[10px]" />
+        <Image src={APP_ICON} alt="" width={34} height={34} className="rounded-[10px]" />
         <div className="leading-tight">
           <div className="font-display text-[16px] font-extrabold tracking-tight">SMM KADR</div>
           <div className="text-[11px] text-muted">Рабочее пространство</div>
@@ -129,7 +130,7 @@ function BellButton({ userId, initialUnread }: { userId: string; initialUnread: 
         clearTimeout(hide);
         hide = setTimeout(() => setToast(null), 7000);
         if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-          navigator.serviceWorker?.ready.then((r) => r.showNotification(n.title, { body: n.body ?? "", icon: "/icons/icon-192.png", data: { url: "/app/notifications" } }));
+          navigator.serviceWorker?.ready.then((r) => r.showNotification(n.title, { body: n.body ?? "", icon: APP_ICON, data: { url: "/app/notifications" } }));
         }
       })
       .subscribe();

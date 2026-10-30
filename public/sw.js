@@ -1,11 +1,15 @@
 // SMM KADR — service worker.
 // Безопасная стратегия: кэшируются только статические ресурсы и офлайн-страница.
 // Приватные ответы API, HTML страниц /app и запросы к Supabase НЕ кэшируются.
-const VERSION = "smmkadr-v3";
-const STATIC = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png", "/brand/mark.svg"];
+// При каждом релизе с новым оформлением увеличивайте VERSION — старые кеши удаляются при активации.
+const VERSION = "smmkadr-v4";
+const ICON = "/icons/smmkadr-192.png";
+const STATIC = ["/offline.html", ICON];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(STATIC)));
+  // Каждый файл отдельно: если один не скачался, новая версия всё равно установится
+  // (раньше сбой addAll мог оставить на телефоне старый service worker со старыми иконками).
+  e.waitUntil(caches.open(VERSION).then((c) => Promise.allSettled(STATIC.map((u) => c.add(new Request(u, { cache: "reload" }))))));
   self.skipWaiting();
 });
 
@@ -25,8 +29,9 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Supabase и внешние запросы — мимо SW
 
-  // Неизменяемая статика Next — cache-first
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  // Неизменяемая статика Next (имена с хешем) — cache-first. Иконки, manifest и логотипы НЕ кешируются здесь:
+  // браузер всегда сверяет их с сервером, поэтому смена логотипа доходит до телефона сразу.
+  if (url.pathname.startsWith("/_next/static/")) {
     e.respondWith(
       caches.open(VERSION).then(async (c) => {
         const hit = await c.match(req);
@@ -54,8 +59,8 @@ self.addEventListener("push", (e) => {
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      icon: ICON,
+      badge: ICON,
       tag: data.tag,
       data: { url: data.url },
     }),

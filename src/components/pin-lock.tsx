@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { APP_ICON } from "@/lib/brand";
 
 const DEVICE_KEY = "citadel.device";
 const PIN_FLAG = "citadel.pin";
@@ -96,7 +97,7 @@ export function PinLock({ userId }: { userId: string }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg/95 backdrop-blur" role="dialog" aria-modal="true" aria-label="Экран блокировки">
       <div className="w-full max-w-xs text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/icon-192.png" alt="" className="mx-auto h-16 w-16 rounded-2xl" />
+        <img src={APP_ICON} alt="" className="mx-auto h-16 w-16 rounded-2xl" />
         <h2 className="mt-4 text-lg font-semibold">Введите PIN</h2>
         <div className="mt-4 flex justify-center gap-3" aria-hidden="true">
           {[0, 1, 2, 3].map((i) => (

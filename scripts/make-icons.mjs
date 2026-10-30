@@ -11,9 +11,18 @@ const svg = (name) => readFileSync(`${brand}/${name}`);
 const png = (input, size, file) => sharp(input, { density: 600 }).resize(size, size).png({ compressionLevel: 9 }).toFile(file);
 
 // Иконки приложения: белый знак на фирменном синем. Длинное название в значке не читается — только знак.
-for (const size of [32, 48, 180, 192, 512]) await png(svg("icon.svg"), size, `${out}/icon-${size}.png`);
+// Основные имена — с ревизией (см. src/lib/brand.ts): новый адрес гарантирует, что телефоны не возьмут старую иконку из кеша.
+// Прежние имена icon-*.png тоже перезаписываются — на случай ссылок, оставшихся в старых установках.
+const REV = "smmkadr";
+for (const size of [32, 48, 180, 192, 512]) {
+  await png(svg("icon.svg"), size, `${out}/${REV}-${size}.png`);
+  await png(svg("icon.svg"), size, `${out}/icon-${size}.png`);
+}
 // Maskable: знак в безопасной зоне (Android обрезает углы/круг).
-for (const size of [192, 512]) await png(svg("icon-maskable.svg"), size, `${out}/maskable-${size}.png`);
+for (const size of [192, 512]) {
+  await png(svg("icon-maskable.svg"), size, `${out}/${REV}-maskable-${size}.png`);
+  await png(svg("icon-maskable.svg"), size, `${out}/maskable-${size}.png`);
+}
 // Next.js file-based иконки (favicon и apple-touch-icon).
 await png(svg("icon.svg"), 64, "src/app/icon.png");
 await png(svg("icon.svg"), 180, "src/app/apple-icon.png");

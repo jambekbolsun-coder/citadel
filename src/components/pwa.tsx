@@ -5,26 +5,69 @@ import { btn } from "@/components/ui";
 
 type BIPEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
+/**
+ * Автообновление: новая версия service worker ставится сама, страница перезагружается на свежий код.
+ * Проверка — при запуске, при возврате в приложение (установленная PWA не перезагружается сама) и раз в 30 минут.
+ */
 export function SwRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator) || location.hostname === "localhost") return;
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).then((reg) => {
+    let timer: number | undefined;
+    let regRef: ServiceWorkerRegistration | null = null;
+    const activate = (w: ServiceWorker | null) => w?.postMessage("skip-waiting");
+    navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).then((reg) => {
+      regRef = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) activate(reg.waiting);
       reg.addEventListener("updatefound", () => {
         const w = reg.installing;
         w?.addEventListener("statechange", () => {
-          if (w.state === "installed" && navigator.serviceWorker.controller) w.postMessage("skip-waiting");
+          if (w.state === "installed" && navigator.serviceWorker.controller) activate(w);
         });
       });
+      reg.update().catch(() => {});
+      timer = window.setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
     });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") regRef?.update().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisible);
     let reloaded = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
+    const onController = () => {
       if (!reloaded) {
         reloaded = true;
         location.reload();
       }
-    });
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", onController);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      navigator.serviceWorker.removeEventListener("controllerchange", onController);
+    };
   }, []);
   return null;
+}
+
+/** «Обновить приложение»: удалить кеши и service worker этого устройства и загрузить свежую версию. Данные и вход не трогает. */
+export function ResetAppButton({ className }: { className?: string }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      className={btn("secondary", className)}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+          if ("serviceWorker" in navigator) await Promise.all((await navigator.serviceWorker.getRegistrations()).map((r) => r.unregister()));
+        } catch {}
+        location.reload();
+      }}
+    >
+      {busy ? "Обновляем…" : "Обновить приложение"}
+    </button>
+  );
 }
 
 /** Кнопка «Скачать приложение»: нативный prompt на Android/Chrome, инструкция на iOS. */
