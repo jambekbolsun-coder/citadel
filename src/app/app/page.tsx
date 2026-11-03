@@ -12,6 +12,8 @@ import { balancesByCurrency, payrollDebt, receivables } from "@/lib/money-math";
 import { CAMPAIGN_STATUS, loadAdProjects, periodOf, statusTone } from "./campaigns/data";
 import { loadMood } from "@/lib/mood";
 import { bishkekHour, greetingFor, mascotSrc } from "@/lib/mascot";
+import { showMonthSummary, type Stats } from "@/lib/achievements";
+import { MonthSummaryCard, StreakChip } from "@/components/achievements";
 
 export const metadata = { title: "Главная" };
 
@@ -61,7 +63,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     s.can("campaigns.manage") || s.can("campaigns.view_all") ? supabase.from("campaigns").select("id", head).eq("status", "active") : none,
     supabase.from("project_admin_checks").select("id", head).eq("admin_id", s.userId).eq("day", today).is("completed_at", null),
   ]);
-  const [ads, balances, payroll, mood, season] = await Promise.all([
+  const [ads, balances, payroll, mood, season, ach, bdays] = await Promise.all([
     adsOn ? loadAdProjects({ period: periodOf({}), status: "work" }) : Promise.resolve(null),
     finance ? supabase.from("v_account_balances").select("currency,balance_minor") : Promise.resolve({ data: [] }),
     payrollOn ? supabase.from("v_payroll_balance").select("accrued_minor,paid_minor,currency") : Promise.resolve({ data: [] }),
@@ -69,7 +71,12 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     // идущий сезон соревнования и мои баллы в нём
     supabase.from("contests").select("id,title,ends_on").eq("status", "active").lte("starts_on", today).gte("ends_on", today).order("ends_on").limit(1).maybeSingle()
       .then(async ({ data: c }) => (c ? { ...(c as { id: string; title: string; ends_on: string }), mine: ((await supabase.rpc("my_contest_score", { p_contest: c.id })).data ?? null) as { score: number } | null } : null)),
+    supabase.rpc("my_achievements"),
+    supabase.rpc("birthdays_today"),
   ]);
+  const stats = ach.data as Stats | null;
+  // именинники-коллеги (себя поздравляет илбирс в карточке выше)
+  const birthdays = ((bdays.data ?? []) as { id: string; full_name: string; greet_name: string | null }[]).filter((p) => p.id !== s.userId);
   const adCards = ads && !ads.error ? ads.cards : [];
   const adChecks = adCards.filter((c) => c.overdueCheck).length;
 
@@ -126,8 +133,22 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
           <h1 className="font-display text-[20px] font-bold leading-tight md:text-[26px]">{greetingFor(bishkekHour())}{mood.name ? `, ${mood.name}` : ""}!</h1>
           <p className="mt-1 text-sm text-muted">{mood.phrase}</p>
           {mood.action && <Link href={mood.action.href} className="mt-1.5 inline-flex min-h-9 items-center text-sm font-semibold text-primary">{mood.action.label} →</Link>}
+          {stats && (stats.streak_days > 0 || stats.overdue_now) && (
+            <Link href="/app/settings/results" className="mt-1.5 block w-fit"><StreakChip stats={stats} className="text-xs" /></Link>
+          )}
         </div>
       </div>
+      {birthdays.length > 0 && (
+        <div className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={mascotSrc("celebrate", "sm")} alt="" width={48} height={48} className="size-12 shrink-0" />
+          <p className="min-w-0 text-sm">
+            <span className="font-semibold">🎂 Сегодня день рождения у {birthdays.map((p) => p.full_name).join(", ")}!</span>{" "}
+            <span className="text-muted">Не забудьте поздравить.</span>
+          </p>
+        </div>
+      )}
+      {stats && showMonthSummary(today) && <MonthSummaryCard month={stats.month} className="mb-5" />}
       {season && (
         <Link href={`/app/contests/${season.id}`} className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 transition active:scale-[.99] md:hover:border-brand">
           <span className="text-2xl" aria-hidden>🏆</span>

@@ -35,3 +35,7 @@
 - `campaigns_guard`, `creatives_guard` — статус и дневной бюджет только через RPC (с историей), прочие правки пишутся в `ad_change_log`; `campaigns_after` назначает таргетолога участником проекта.
 - `spend_guard` — журнал расходов рекламы неизменяем (кроме пометки «заменено» внутри RPC); удаление — только каскадом вместе с кампанией.
 - `money_tx_currency_guard` — движение по кассе только в валюте кассы; `payments_currency_guard` — платёж в валюте счёта (0015).
+
+## 0023 — значки и дни рождения (только функции)
+- `my_achievements()` → jsonb: счётчики значков (`tasks_done` без задач «себе», `videos`, `content`, `story_days`, `active_days`, `contest_top3`, `contest_wins`), `streak_days` / `best_streak` (рабочие дни между «окнами просрочки» — от срока до сдачи; рабочие дни из `app_settings.work_days`, по умолчанию пн–пт), `overdue_now`, `month` — итоги прошлого месяца (Бишкек).
+- `birthdays_today()` → id, full_name, greet_name, avatar_url активных сотрудников с днём рождения сегодня (security definer, только для активных).
