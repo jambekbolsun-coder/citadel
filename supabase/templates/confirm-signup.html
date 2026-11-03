@@ -1,0 +1,15 @@
+<!-- Supabase → Authentication → Emails → Templates → «Confirm signup».
+     Тема письма: Подтвердите email — SMM KADR
+     Ссылка с token_hash работает в любом браузере и в приложении Gmail; код — если ссылку открыть неудобно. -->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111827">
+  <div style="font-size:22px;font-weight:800;color:#1845D2;letter-spacing:-0.3px">SMM KADR</div>
+  <h2 style="margin:20px 0 8px;font-size:20px">Подтвердите email</h2>
+  <p style="margin:0 0 20px;font-size:15px;line-height:1.5">Нажмите кнопку, чтобы завершить регистрацию в рабочем приложении SMM KADR.</p>
+  <p style="margin:0 0 24px">
+    <a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email"
+       style="display:inline-block;background:#1845D2;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 24px;border-radius:12px">Подтвердить email</a>
+  </p>
+  <p style="margin:0 0 6px;font-size:14px;color:#5f6b7a">Или введите этот код на экране регистрации:</p>
+  <p style="margin:0 0 24px;font-size:28px;font-weight:800;letter-spacing:6px">{{ .Token }}</p>
+  <p style="margin:0;font-size:12px;color:#5f6b7a">Если вы не регистрировались в SMM KADR, просто удалите это письмо.</p>
+</div>

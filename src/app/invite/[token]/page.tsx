@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { AuthShell } from "@/components/auth-shell";
-import { ActionForm, Submit } from "@/components/action-form";
-import { acceptInvite, signUp } from "@/app/auth-actions";
+import { AcceptInviteForm, SignupForm } from "@/components/auth-forms";
+import { logout } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/auth";
-import { Field, Notice } from "@/components/ui";
+import { btn, Notice } from "@/components/ui";
 
 export const metadata = { title: "Приглашение" };
 
@@ -52,16 +52,9 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
     return (
       <AuthShell title="Присоединиться к SMM KADR" subtitle={`Используйте email, на который выписано приглашение (${p.email_hint})`}>
         {intro}
-        <ActionForm action={signUp} className="space-y-4">
-          <input type="hidden" name="next" value={`/invite/${token}`} />
-          <input type="hidden" name="full_name" value={p.full_name} />
-          <Field label="Рабочий email"><input name="email" type="email" required className="input" autoComplete="email" /></Field>
-          <Field label="Пароль" hint="Минимум 10 символов, буквы и цифры. PIN для быстрого входа задаётся после."><input name="password" type="password" required minLength={10} className="input" autoComplete="new-password" /></Field>
-          <Field label="Повторите пароль"><input name="password2" type="password" required minLength={10} className="input" autoComplete="new-password" /></Field>
-          <Submit className="w-full">Создать аккаунт и подтвердить email</Submit>
-        </ActionForm>
+        <SignupForm next={`/invite/${token}`} fullName={p.full_name ?? ""} submitLabel="Создать аккаунт" />
         <p className="mt-4 text-sm text-muted">
-          Уже есть аккаунт? <Link className="text-primary" href={`/login?next=/invite/${token}`}>Войти</Link>
+          Уже зарегистрировались или подтвердили email? <Link className="text-primary" href={`/login?next=/invite/${token}`}>Войти</Link>
         </p>
       </AuthShell>
     );
@@ -70,18 +63,13 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
   return (
     <AuthShell title="Заполните профиль" subtitle={`Вы вошли как ${session.email}`}>
       {intro}
-      <ActionForm action={acceptInvite} className="space-y-4">
-        <input type="hidden" name="token" value={token} />
-        <Field label="Телефон"><input name="phone" type="tel" className="input" autoComplete="tel" /></Field>
-        <Field label="Зоны ответственности и обязанности"><textarea name="responsibilities" className="input" /></Field>
-        <Field label="О себе"><textarea name="about" className="input" /></Field>
-        <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" name="rules" required className="mt-1 h-4 w-4" />
-          <span>Принимаю правила доступа: данные компании конфиденциальны, доступы не передаются третьим лицам, действия фиксируются в журнале.</span>
-        </label>
-        <Submit className="w-full">Присоединиться</Submit>
-      </ActionForm>
+      <AcceptInviteForm token={token} />
       <p className="mt-3 text-xs text-muted">Роль, зарплата и права назначаются руководителем и не меняются через эту форму.</p>
+      <form action={logout} className="mt-4 border-t border-line pt-4 text-sm">
+        <input type="hidden" name="next" value={`/invite/${token}`} />
+        <p className="text-muted">Приглашение выписано на {p.email_hint}. Вошли другим аккаунтом?</p>
+        <button className={btn("secondary", "mt-2 w-full")}>Выйти и войти другим email</button>
+      </form>
     </AuthShell>
   );
 }

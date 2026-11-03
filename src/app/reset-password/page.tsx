@@ -1,18 +1,16 @@
-import { AuthShell } from "@/components/auth-shell";
-import { ActionForm, Submit } from "@/components/action-form";
-import { requestReset } from "@/app/auth-actions";
-import { Field } from "@/components/ui";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth-shell";
+import { ResetRequestForm } from "@/components/auth-forms";
+import { Notice } from "@/components/ui";
 
 export const metadata = { title: "Восстановление пароля" };
 
-export default function ResetPassword() {
+export default async function ResetPassword({ searchParams }: PageProps<"/reset-password">) {
+  const sp = await searchParams;
   return (
     <AuthShell title="Восстановление пароля" footer={<Link href="/login">← Ко входу</Link>}>
-      <ActionForm action={requestReset} className="space-y-4">
-        <Field label="Email"><input name="email" type="email" required className="input" /></Field>
-        <Submit className="w-full">Отправить ссылку</Submit>
-      </ActionForm>
+      {sp.expired ? <div className="mb-4"><Notice tone="warn">Ссылка для смены пароля устарела или уже использована. Запросите новую и откройте самое последнее письмо.</Notice></div> : null}
+      <ResetRequestForm />
     </AuthShell>
   );
 }
