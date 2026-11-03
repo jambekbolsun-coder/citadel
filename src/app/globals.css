@@ -238,3 +238,11 @@ dialog.sheet[open]::backdrop { animation: fade-in .2s ease-out; }
 @media (min-width: 768px) { .mascot-card img { width: 104px; height: 104px; } }
 .mascot-pop { animation: greet-pop 0.55s cubic-bezier(.2, 1.4, .4, 1) both; }
 @media (prefers-reduced-motion: reduce) { .mascot-pop { animation: none; } }
+
+/* Конфетти на церемонии итогов */
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; background: #4de5ff; animation: confetti-fall 2.6s linear infinite; }
+.confetti i:nth-child(3n) { background: #ffcf33; }
+.confetti i:nth-child(3n + 1) { background: #ffffff; }
+@keyframes confetti-fall { to { transform: translateY(105vh) rotate(540deg); } }
+@media (prefers-reduced-motion: reduce) { .confetti { display: none; } }

@@ -9,6 +9,7 @@ export const NAV: NavItem[] = [
   { href: "/app/tasks", label: "Поручения", icon: "list", group: "Работа" },
   { href: "/app/calendar", label: "Календарь", icon: "calendar", group: "Работа" },
   { href: "/app/notifications", label: "Уведомления", icon: "bell", group: "Работа" },
+  { href: "/app/contests", label: "Соревнования", icon: "trophy", group: "Работа" },
   { href: "/app/projects", label: "Проекты", icon: "folder", group: "Производство" },
   { href: "/app/content", label: "Контент", icon: "film", group: "Производство" },
   { href: "/app/shoots", label: "Съёмки", icon: "camera", group: "Производство" },
@@ -41,6 +42,7 @@ const SUBPAGE_PERMS: Record<string, string[]> = {
   "/app/finance/expense": ["expenses.create"],
   "/app/campaigns/new": ["campaigns.manage"],
   "/app/projects/new": ["projects.create"],
+  "/app/contests/new": ["contests.manage"],
   "/app/shoots/new": ["shoots.manage", "projects.manage"],
 };
 
@@ -123,6 +125,7 @@ export function settingsGroups(v: Viewer): SettingsGroup[] {
         { href: "/app/settings/duties", label: "Должность и обязанности", icon: "briefcase" },
         { href: "/app/settings/pay", label: "Мои выплаты", icon: "banknote" },
         { href: "/app/settings/results", label: "Мои результаты", icon: "trophy" },
+        { href: "/app/contests", label: "Соревнования", icon: "trophy" },
       ]),
     },
     {
@@ -207,6 +210,7 @@ export function titleFor(path: string): string {
     "/app/calendar/new": "Запись в календарь",
     "/app/finance/expense": "Новый расход",
     "/app/projects/new": "Новый проект",
+    "/app/contests/new": "Новый сезон",
     "/app/shoots/new": "Новая съёмка",
     "/app/reports/speed": "Скорость",
     "/app/campaigns/new": "Новая кампания",

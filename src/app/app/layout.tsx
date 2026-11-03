@@ -6,6 +6,7 @@ import { AppHeader, BottomNav, PlusSheet, Sidebar } from "@/components/shell";
 import { PinLock } from "@/components/pin-lock";
 import { WebVitals } from "@/components/web-vitals";
 import { GreetingSplash } from "@/components/greeting-splash";
+import { ActivityPing } from "@/components/activity-ping";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
       <PlusSheet actions={plusActions(s)} />
       <PinLock userId={s.userId} />
       <GreetingSplash userId={s.userId} />
+      <ActivityPing userId={s.userId} />
       <WebVitals />
     </div>
   );

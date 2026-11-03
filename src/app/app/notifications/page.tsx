@@ -11,7 +11,7 @@ export const metadata = { title: "Уведомления" };
 function hrefOf(t: string | null, id: string | null, type?: string) {
   if (type === "employee.approved") return "/app"; // уведомление самому сотруднику — ведём в его кабинет
   if (!t || !id) return "/app";
-  return { lead: `/app/leads/${id}`, project: `/app/projects/${id}`, content: `/app/content/${id}`, task: `/app/tasks/${id}`, shoot: `/app/shoots/${id}`, profile: `/app/team/${id}`, campaign: `/app/campaigns/${id}`, payroll: "/app/payroll", period: "/app/projects" }[t] ?? "/app";
+  return { lead: `/app/leads/${id}`, project: `/app/projects/${id}`, content: `/app/content/${id}`, task: `/app/tasks/${id}`, shoot: `/app/shoots/${id}`, profile: `/app/team/${id}`, campaign: `/app/campaigns/${id}`, contest: `/app/contests/${id}`, payroll: "/app/payroll", period: "/app/projects" }[t] ?? "/app";
 }
 
 export default async function Notifications({ searchParams }: PageProps<"/app/notifications">) {

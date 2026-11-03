@@ -61,11 +61,14 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     s.can("campaigns.manage") || s.can("campaigns.view_all") ? supabase.from("campaigns").select("id", head).eq("status", "active") : none,
     supabase.from("project_admin_checks").select("id", head).eq("admin_id", s.userId).eq("day", today).is("completed_at", null),
   ]);
-  const [ads, balances, payroll, mood] = await Promise.all([
+  const [ads, balances, payroll, mood, season] = await Promise.all([
     adsOn ? loadAdProjects({ period: periodOf({}), status: "work" }) : Promise.resolve(null),
     finance ? supabase.from("v_account_balances").select("currency,balance_minor") : Promise.resolve({ data: [] }),
     payrollOn ? supabase.from("v_payroll_balance").select("accrued_minor,paid_minor,currency") : Promise.resolve({ data: [] }),
     loadMood(s.profile as { full_name?: string | null; greet_name?: string | null; address_form?: string | null } | null),
+    // идущий сезон соревнования и мои баллы в нём
+    supabase.from("contests").select("id,title,ends_on").eq("status", "active").lte("starts_on", today).gte("ends_on", today).order("ends_on").limit(1).maybeSingle()
+      .then(async ({ data: c }) => (c ? { ...(c as { id: string; title: string; ends_on: string }), mine: ((await supabase.rpc("my_contest_score", { p_contest: c.id })).data ?? null) as { score: number } | null } : null)),
   ]);
   const adCards = ads && !ads.error ? ads.cards : [];
   const adChecks = adCards.filter((c) => c.overdueCheck).length;
@@ -125,6 +128,16 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
           {mood.action && <Link href={mood.action.href} className="mt-1.5 inline-flex min-h-9 items-center text-sm font-semibold text-primary">{mood.action.label} →</Link>}
         </div>
       </div>
+      {season && (
+        <Link href={`/app/contests/${season.id}`} className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 transition active:scale-[.99] md:hover:border-brand">
+          <span className="text-2xl" aria-hidden>🏆</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">{season.title}</span>
+            <span className="block text-xs text-muted">до {date(season.ends_on)}{season.mine ? "" : " · смотреть рейтинг"}</span>
+          </span>
+          {season.mine && <span className="shrink-0 text-right"><span className="block font-display text-2xl font-extrabold leading-none text-primary">{season.mine.score}</span><span className="text-[11px] text-muted">ваши баллы</span></span>}
+        </Link>
+      )}
       {sp.denied ? <div className="mb-4"><Notice tone="warn">Раздел недоступен для вашей роли.</Notice></div> : null}
 
       {tiles.length > 0 && (
