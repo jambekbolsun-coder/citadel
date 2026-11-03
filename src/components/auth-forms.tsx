@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
-import { acceptInvite, login, requestReset, resendConfirmation, signUp, updatePassword, verifyEmailCode } from "@/app/auth-actions";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import { acceptInvite, getEmailQuota, login, requestReset, resendConfirmation, signUp, updatePassword } from "@/app/auth-actions";
 import { KeepForm } from "@/components/keep-form";
-import { btn } from "@/components/ui";
+import { btn, cn } from "@/components/ui";
+import { MAIL_LIMIT_PER_HOUR, freeSlots, mmss, secondsUntilFree, type EmailQuota } from "@/lib/email-quota";
 
 type State = { ok?: string; error?: string; data?: Record<string, unknown> } | null;
 
@@ -28,8 +29,54 @@ function Alert({ s }: { s: State }) {
   return null;
 }
 
-/** Кнопка повторной отправки письма с паузой 60 секунд (ограничение Supabase). */
-function ResendButton({ email, next, wait = 60 }: { email: string; next: string; wait?: number }) {
+// ───────── лимит писем: 2 в час на весь проект ─────────
+
+/** Состояние лимита писем с живым таймером; по окончании таймера сам перепроверяет сервер. */
+export function useEmailQuota(initial: EmailQuota | null) {
+  const [q, setQ] = useState(initial);
+  const [fetchedAt, setFetchedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const left = secondsUntilFree(q, now, fetchedAt);
+  const refresh = useCallback(async () => {
+    const fresh = await getEmailQuota();
+    setQ(fresh);
+    setFetchedAt(Date.now());
+    setNow(Date.now());
+  }, []);
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+  // когда таймер дойдёт до нуля — уточняем у сервера (за это время могли уйти другие письма)
+  useEffect(() => {
+    const wait = secondsUntilFree(q, Date.now(), fetchedAt);
+    if (!q?.next_free_at || wait <= 0) return;
+    const t = window.setTimeout(() => void refresh(), wait * 1000 + 1500);
+    return () => window.clearTimeout(t);
+  }, [q, fetchedAt, refresh]);
+  return { q, left, busy: left > 0, refresh };
+}
+
+/** Плашка «лимит писем»: таймер до следующего письма или сколько писем свободно в этот час. */
+export function QuotaNotice({ left, q, action = "регистрацию" }: { left: number; q: EmailQuota | null; action?: string }) {
+  if (left > 0)
+    return (
+      <div className="rounded-xl border border-warn/40 bg-warn-soft p-4 text-sm text-warn" role="status" aria-live="polite">
+        <div className="font-semibold">Лимит писем на этот час исчерпан</div>
+        <div className="mt-1">
+          Следующую {action} можно через <span className="font-display text-lg font-extrabold tabular-nums">{mmss(left)}</span>. Не нажимайте кнопку раньше — письмо всё равно не уйдёт.
+        </div>
+      </div>
+    );
+  return (
+    <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
+      Писем свободно в этот час: <b className="text-ink">{freeSlots(q)} из {MAIL_LIMIT_PER_HOUR}</b>. Каждая регистрация, повторное письмо и сброс пароля тратят одно.
+    </p>
+  );
+}
+
+/** Повторная отправка письма: пауза 60 секунд и учёт общего лимита писем. */
+function ResendButton({ email, next, wait = 60, quota }: { email: string; next: string; wait?: number; quota: ReturnType<typeof useEmailQuota> }) {
   const [left, setLeft] = useState(wait);
   const [state, setState] = useState<State>(null);
   const [pending, start] = useTransition();
@@ -38,81 +85,78 @@ function ResendButton({ email, next, wait = 60 }: { email: string; next: string;
     const t = window.setTimeout(() => setLeft((x) => x - 1), 1000);
     return () => window.clearTimeout(t);
   }, [left]);
+  const waitFor = Math.max(left, quota.left);
   return (
     <div className="space-y-2">
       <button
         type="button"
-        disabled={left > 0 || pending}
+        disabled={waitFor > 0 || pending}
         className={btn("secondary", "w-full")}
         onClick={() => start(async () => {
           const r = await resendConfirmation(email, next);
           setState(r);
           setLeft(60);
+          await quota.refresh();
         })}
       >
-        {pending ? "Отправляем…" : left > 0 ? `Отправить письмо ещё раз (через ${left} с)` : "Отправить письмо ещё раз"}
+        {pending ? "Отправляем…" : waitFor > 0 ? `Отправить письмо ещё раз — через ${mmss(waitFor)}` : "Отправить письмо ещё раз"}
       </button>
+      <p className="text-xs text-muted">Повторное письмо тратит одно из {MAIL_LIMIT_PER_HOUR} писем часа. Сначала проверьте «Спам» и «Промоакции».</p>
       <Alert s={state} />
     </div>
   );
 }
 
-/** Экран после регистрации: где искать письмо, повторная отправка и ввод кода из письма. */
-export function CheckEmail({ email, next, onBack }: { email: string; next: string; onBack?: () => void }) {
-  const [code, setCode] = useState("");
-  const [state, setState] = useState<State>(null);
-  const [pending, start] = useTransition();
+/** Экран после регистрации: где искать письмо и как продолжить, если ссылку открыли не там. */
+export function CheckEmail({ email, next, onBack, quota }: { email: string; next: string; onBack?: () => void; quota: ReturnType<typeof useEmailQuota> }) {
   return (
     <div className="space-y-4" role="status">
       <div className="rounded-xl bg-good-soft p-4 text-sm text-good">
-        <div className="font-semibold">Письмо отправлено на {email}</div>
-        <div className="mt-1">Откройте письмо «SMM KADR» и нажмите кнопку подтверждения. Не пришло за 2–3 минуты — проверьте «Спам» и «Промоакции».</div>
+        <div className="font-semibold">Аккаунт создан, письмо отправлено на {email}</div>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>Откройте письмо от Supabase Auth (тема «Confirm your signup»). Не пришло за 2–3 минуты — проверьте «Спам» и «Промоакции».</li>
+          <li>Нажмите в письме ссылку подтверждения — лучше на этом же телефоне и в этом же браузере.</li>
+          <li>Откроется «Заполните профиль» — заполните и нажмите «Присоединиться».</li>
+        </ol>
       </div>
-      <form
-        className="space-y-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          start(async () => setState(await verifyEmailCode(email, code, next)));
-        }}
-      >
-        <label className="block">
-          <span className="label">Или введите код из письма</span>
-          <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" placeholder="6 цифр" maxLength={12} className="input tracking-[0.3em]" />
-        </label>
-        <button type="submit" disabled={pending || code.replace(/\D/g, "").length < 6} className={btn("primary", "w-full")}>{pending ? "Проверяем…" : "Подтвердить код"}</button>
-        <Alert s={state} />
-      </form>
-      <ResendButton email={email} next={next} />
-      <p className="text-xs text-muted">
-        Открыли ссылку на другом устройстве или в приложении Gmail? Email всё равно подтвердится — вернитесь сюда и <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-primary underline">войдите с паролем</Link>.
+      <p className="text-sm">
+        Ссылка открылась в приложении Gmail или на другом устройстве и попросила войти? Email уже подтверждён — <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-semibold text-primary underline">войдите с этим email и паролем</Link>, приглашение откроется само.
       </p>
+      <ResendButton email={email} next={next} quota={quota} />
       {onBack && <button type="button" onClick={onBack} className="text-sm text-primary">← Указать другой email</button>}
     </div>
   );
 }
 
-/** Регистрация: email + пароль; при ошибке поля остаются заполненными. */
-export function SignupForm({ next, fullName, submitLabel = "Создать аккаунт" }: { next: string; fullName?: string; submitLabel?: string }) {
+/** Регистрация: email + пароль; при ошибке поля остаются заполненными; при исчерпанном лимите — таймер. */
+export function SignupForm({ next, fullName, submitLabel = "Создать аккаунт", quota: initialQuota = null }: { next: string; fullName?: string; submitLabel?: string; quota?: EmailQuota | null }) {
+  const quota = useEmailQuota(initialQuota);
   const [state, setState] = useState<State>(null);
   const [sent, setSent] = useState<string | null>(null);
+  const [force, setForce] = useState(false);
   const [pending, start] = useTransition();
-  if (sent) return <CheckEmail email={sent} next={next} onBack={() => { setSent(null); setState(null); }} />;
+  if (sent) return <CheckEmail email={sent} next={next} quota={quota} onBack={() => { setSent(null); setState(null); }} />;
+  const blocked = quota.busy && !force;
   return (
     <form
       className="space-y-4"
       aria-busy={pending}
       onSubmit={(e) => {
         e.preventDefault();
+        if (blocked) return;
         const fd = new FormData(e.currentTarget);
         start(async () => {
           const r = await signUp(null, fd);
           if (r?.data?.sent) setSent(String(r.data.email));
           else setState(r);
+          setForce(false);
+          await quota.refresh();
         });
       }}
     >
       <input type="hidden" name="next" value={next} />
       {fullName !== undefined && <input type="hidden" name="full_name" value={fullName} />}
+      <QuotaNotice left={quota.left} q={quota.q} />
       <label className="block"><span className="label">Рабочий email</span><input name="email" type="email" required className="input" autoComplete="email" inputMode="email" /></label>
       <label className="block">
         <span className="label">Придумайте пароль</span>
@@ -127,7 +171,14 @@ export function SignupForm({ next, fullName, submitLabel = "Создать ак�
           <Link href="/reset-password" className={btn("secondary")}>Забыли пароль?</Link>
         </div>
       ) : null}
-      <button type="submit" disabled={pending} aria-busy={pending} className={btn("primary", "w-full")}>{pending ? "Создаём аккаунт…" : submitLabel}</button>
+      <button type="submit" disabled={pending || blocked} aria-busy={pending} className={btn("primary", "w-full")}>
+        {pending ? "Создаём аккаунт…" : blocked ? `Можно через ${mmss(quota.left)}` : submitLabel}
+      </button>
+      {quota.busy && !force && (
+        <button type="button" onClick={() => setForce(true)} className={cn("w-full text-center text-xs text-muted underline")}>
+          Руководитель сказал, что лимит уже свободен — попробовать сейчас
+        </button>
+      )}
     </form>
   );
 }
@@ -137,6 +188,7 @@ export function LoginForm({ next }: { next: string }) {
   const [state, setState] = useState<State>(null);
   const [email, setEmail] = useState("");
   const [pending, start] = useTransition();
+  const quota = useEmailQuota(null);
   return (
     <form
       className="space-y-4"
@@ -144,7 +196,11 @@ export function LoginForm({ next }: { next: string }) {
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
-        start(async () => setState(await login(null, fd)));
+        start(async () => {
+          const r = await login(null, fd);
+          setState(r);
+          if (r?.data?.unconfirmed) await quota.refresh();
+        });
       }}
     >
       <input type="hidden" name="next" value={next} />
@@ -157,20 +213,22 @@ export function LoginForm({ next }: { next: string }) {
         <PasswordInput name="password" autoComplete="current-password" />
       </label>
       <Alert s={state} />
-      {state?.data?.unconfirmed ? <ResendButton email={email} next={next} wait={0} /> : null}
+      {state?.data?.unconfirmed ? <ResendButton email={email} next={next} wait={0} quota={quota} /> : null}
       <button type="submit" disabled={pending} aria-busy={pending} className={btn("primary", "w-full")}>{pending ? "Входим…" : "Войти"}</button>
     </form>
   );
 }
 
 /** Запрос ссылки для смены пароля (поле email не очищается при ошибке). */
-export function ResetRequestForm() {
+export function ResetRequestForm({ quota: initialQuota = null }: { quota?: EmailQuota | null }) {
+  const quota = useEmailQuota(initialQuota);
   return (
-    <KeepForm action={requestReset} className="space-y-4">
+    <KeepForm action={requestReset} className="space-y-4" onDone={() => void quota.refresh()}>
       {(pending) => (
         <>
+          <QuotaNotice left={quota.left} q={quota.q} action="отправку письма" />
           <label className="block"><span className="label">Email</span><input name="email" type="email" required inputMode="email" autoComplete="email" className="input" /></label>
-          <button type="submit" disabled={pending} className={btn("primary", "w-full")}>{pending ? "Отправляем…" : "Отправить ссылку"}</button>
+          <button type="submit" disabled={pending || quota.busy} className={btn("primary", "w-full")}>{pending ? "Отправляем…" : quota.busy ? `Можно через ${mmss(quota.left)}` : "Отправить ссылку"}</button>
         </>
       )}
     </KeepForm>

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { action, check, str, type ActionState } from "@/lib/actions";
 import { authErrorText } from "@/lib/auth-errors";
+import type { EmailQuota } from "@/lib/email-quota";
 
 async function origin() {
   const h = await headers();
@@ -14,6 +15,23 @@ async function origin() {
 
 function safeNext(n: string) {
   return n.startsWith("/") && !n.startsWith("//") ? n : "/app";
+}
+
+// ───── лимит встроенной почты Supabase (2 письма в час): отметки отправок и состояние для таймера ─────
+type MailKind = "signup" | "resend" | "recovery" | "limit";
+const isMailLimit = (e: { code?: string; message?: string } | null) => !!e && (e.code === "over_email_send_rate_limit" || /email rate limit/i.test(e.message ?? ""));
+async function noteMail(kind: MailKind) {
+  try {
+    const supabase = await createClient();
+    await supabase.rpc("mail_quota_note", { p_kind: kind });
+  } catch {} // отметка вспомогательная — никогда не ломает вход и регистрацию
+}
+
+/** Сколько писем ушло за час и когда можно следующее (для таймера на экранах приглашения, сброса пароля и «Команды»). */
+export async function getEmailQuota(): Promise<EmailQuota | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("email_quota");
+  return (data as EmailQuota | null) ?? null;
 }
 
 const callbackUrl = async (next: string) => `${await origin()}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -59,9 +77,13 @@ export async function signUp(_p: ActionState, fd: FormData): Promise<ActionState
     password,
     options: { emailRedirectTo: await callbackUrl(next), data: { full_name: str(fd, "full_name") } },
   });
-  if (error) return { error: authErrorText(error), data: error.code === "user_already_exists" ? { exists: true } : undefined };
+  if (error) {
+    if (isMailLimit(error)) await noteMail("limit");
+    return { error: authErrorText(error), data: error.code === "user_already_exists" ? { exists: true } : isMailLimit(error) ? { limit: true } : undefined };
+  }
   if (data.session) redirect(next); // если подтверждение email отключено в проекте
   if (data.user && (data.user.identities?.length ?? 0) === 0) return { error: authErrorText({ code: "user_already_exists" }), data: { exists: true } };
+  await noteMail("signup");
   return { ok: "Письмо отправлено", data: { sent: true, email } };
 }
 
@@ -69,18 +91,12 @@ export async function signUp(_p: ActionState, fd: FormData): Promise<ActionState
 export async function resendConfirmation(email: string, next: string): Promise<ActionState> {
   const supabase = await createClient();
   const { error } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: await callbackUrl(safeNext(next)) } });
-  if (error) return { error: authErrorText(error) };
+  if (error) {
+    if (isMailLimit(error)) await noteMail("limit");
+    return { error: authErrorText(error), data: isMailLimit(error) ? { limit: true } : undefined };
+  }
+  await noteMail("resend");
   return { ok: "Письмо отправлено ещё раз. Проверьте «Входящие» и «Спам»." };
-}
-
-/** Подтверждение email кодом из письма — работает на любом устройстве, ссылку открывать не нужно. */
-export async function verifyEmailCode(email: string, code: string, next: string): Promise<ActionState> {
-  const token = code.replace(/\D/g, "");
-  if (token.length < 6 || token.length > 10) return { error: "Введите код из письма — 6 цифр" };
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token, type: "signup" });
-  if (error) return { error: authErrorText(error) };
-  redirect(safeNext(next));
 }
 
 export const claimOwner = action(async (fd) => {
@@ -108,7 +124,11 @@ export const requestReset = action(async (fd) => {
   const { error } = await supabase.auth.resetPasswordForEmail(str(fd, "email").toLowerCase(), {
     redirectTo: `${await origin()}/auth/callback?next=/auth/update-password`,
   });
-  if (error) throw new Error(authErrorText(error));
+  if (error) {
+    if (isMailLimit(error)) await noteMail("limit");
+    throw new Error(authErrorText(error));
+  }
+  await noteMail("recovery");
   return "Если такой email зарегистрирован, письмо со ссылкой отправлено. Откройте самое новое письмо; ссылка срабатывает один раз.";
 });
 

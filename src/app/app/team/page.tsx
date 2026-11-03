@@ -7,6 +7,8 @@ import { PeopleSelect } from "@/components/people-select";
 import { activePeople } from "@/lib/data";
 import { dateTime } from "@/lib/format";
 import { InviteActionForm, Submit } from "./invite-form";
+import { MailQuotaCard } from "@/components/mail-quota-card";
+import type { EmailQuota } from "@/lib/email-quota";
 import { SalaryFields } from "./salary-fields";
 import { createDepartment, createInvite, reissueInvite, revokeInvite } from "./actions";
 
@@ -21,12 +23,14 @@ export default async function Team({ searchParams }: PageProps<"/app/team">) {
   const status = typeof sp.status === "string" ? sp.status : "";
   let q = supabase.from("profiles").select("id,full_name,email,job_title,status,avatar_url,departments!profiles_department_id_fkey(name),user_roles!user_roles_user_id_fkey(role_code)").order("full_name");
   if (status) q = q.eq("status", status);
-  const [{ data: profiles, error: profilesError }, { data: invites }, { data: roles }, { data: deps }, people] = await Promise.all([
+  const inviting = (tab === "invite" || tab === "invites") && s.can("employees.invite");
+  const [{ data: profiles, error: profilesError }, { data: invites }, { data: roles }, { data: deps }, people, { data: quota }] = await Promise.all([
     q,
     s.can("employees.invite") ? supabase.from("employee_invites").select("id,full_name,email,job_title,status,expires_at,created_at,used_at").order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
     supabase.from("roles").select("code,name").neq("code", "owner").order("sort"),
     supabase.from("departments").select("id,name").is("archived_at", null).order("name"),
     activePeople(),
+    inviting ? supabase.rpc("email_quota") : Promise.resolve({ data: null }),
   ]);
   const roleName = Object.fromEntries((roles ?? []).map((r: { code: string; name: string }) => [r.code, r.name]));
   roleName.owner = "Владелец";
@@ -57,6 +61,7 @@ export default async function Team({ searchParams }: PageProps<"/app/team">) {
         </>
       )}
 
+      {inviting && <MailQuotaCard quota={(quota as EmailQuota | null) ?? null} />}
       {tab === "invite" && s.can("employees.invite") && (
         <Card title="Новый сотрудник">
           <InviteActionForm action={createInvite} className="space-y-4">

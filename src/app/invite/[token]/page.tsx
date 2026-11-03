@@ -5,6 +5,7 @@ import { logout } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/auth";
 import { btn, Notice } from "@/components/ui";
+import type { EmailQuota } from "@/lib/email-quota";
 
 export const metadata = { title: "Приглашение" };
 
@@ -22,6 +23,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
   const { data } = await supabase.rpc("invite_preview", { p_token: token });
   const p = (data ?? { valid: false, reason: "not_found" }) as Preview;
   const session = await getSession();
+  const { data: quota } = session ? { data: null } : await supabase.rpc("email_quota");
 
   if (!p.valid) {
     if (session?.profile?.status === "pending_approval") {
@@ -52,7 +54,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
     return (
       <AuthShell title="Присоединиться к SMM KADR" subtitle={`Используйте email, на который выписано приглашение (${p.email_hint})`}>
         {intro}
-        <SignupForm next={`/invite/${token}`} fullName={p.full_name ?? ""} submitLabel="Создать аккаунт" />
+        <SignupForm next={`/invite/${token}`} fullName={p.full_name ?? ""} submitLabel="Создать аккаунт" quota={quota as EmailQuota | null} />
         <p className="mt-4 text-sm text-muted">
           Уже зарегистрировались или подтвердили email? <Link className="text-primary" href={`/login?next=/invite/${token}`}>Войти</Link>
         </p>
