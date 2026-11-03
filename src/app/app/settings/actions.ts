@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { action, check, opt, str } from "@/lib/actions";
 import { getSession } from "@/lib/auth";
 import { availableWorkTabs, WORK_TAB_COOKIE } from "@/lib/nav";
+import { EMOTIONS } from "@/lib/mascot";
 
 export const saveProfile = action(async (fd) => {
   const supabase = await createClient();
@@ -21,7 +22,15 @@ export const saveProfile = action(async (fd) => {
   check(
     await supabase
       .from("profiles")
-      .update({ full_name: str(fd, "full_name"), phone: opt(fd, "phone"), about: opt(fd, "about"), theme: str(fd, "theme") || "system", ...(avatar ? { avatar_url: avatar } : {}) })
+      .update({
+        full_name: str(fd, "full_name"), phone: opt(fd, "phone"), about: opt(fd, "about"), theme: str(fd, "theme") || "system",
+        ...(fd.has("address_form") ? {
+          greet_name: opt(fd, "greet_name")?.slice(0, 40) ?? null,
+          address_form: ["he", "she"].includes(str(fd, "address_form")) ? str(fd, "address_form") : "none",
+          birth_date: /^\d{4}-\d{2}-\d{2}$/.test(str(fd, "birth_date")) ? str(fd, "birth_date") : null,
+        } : {}),
+        ...(avatar ? { avatar_url: avatar } : {}),
+      })
       .eq("id", u.user!.id),
   );
   revalidatePath("/app", "layout");
@@ -78,3 +87,18 @@ export async function setWorkTab(fd: FormData) {
   jar.set(`${WORK_TAB_COOKIE}_${s.userId.slice(0, 8)}`, tab, { path: "/app", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true, secure: process.env.NODE_ENV === "production" });
   revalidatePath("/app", "layout");
 }
+
+/** Фразы илбирса (владелец): по строке на вариант; пустое поле — фразы по умолчанию. */
+export const saveMascotPhrases = action(async (fd) => {
+  const s = await getSession();
+  if (!s?.isOwner) throw new Error("Фразы илбирса меняет владелец");
+  const out: Record<string, string[]> = {};
+  for (const e of EMOTIONS) {
+    const lines = str(fd, e).split(/\r?\n/).map((x) => x.trim()).filter(Boolean).slice(0, 8).map((x) => x.slice(0, 200));
+    if (lines.length) out[e] = lines;
+  }
+  const supabase = await createClient();
+  check(await supabase.from("app_settings").update({ value: Object.keys(out).length ? JSON.stringify(out) : "", updated_at: new Date().toISOString() }).eq("key", "mascot_phrases"));
+  revalidatePath("/app", "layout");
+  return "Фразы сохранены — илбирс скажет их уже сегодня";
+});

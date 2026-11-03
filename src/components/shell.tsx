@@ -294,7 +294,11 @@ function SubmitPanel({ onClose }: { onClose: () => void }) {
   if (state?.ok)
     return (
       <div className="py-6 text-center">
+        {/* илбирс радуется сданной работе */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/mascot/happy-sm.webp" alt="" width={120} height={120} className="mascot-pop mx-auto mb-2 h-[120px] w-[120px] object-contain" />
         <p role="status" className="font-semibold text-good">{state.ok}</p>
+        <p className="mt-1 text-sm text-muted">Отлично! Илбирс доволен — так держать.</p>
         <button type="button" className={btn("secondary", "mt-4")} onClick={onClose}>Готово</button>
       </div>
     );

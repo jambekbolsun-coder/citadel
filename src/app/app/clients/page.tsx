@@ -75,7 +75,7 @@ export default async function Clients({ searchParams }: PageProps<"/app/clients"
       </form>
 
       {error ? (
-        <Empty title="Не удалось загрузить базу клиентов" text={error.message} />
+        <Empty mascot={false} title="Не удалось загрузить базу клиентов" text={error.message} />
       ) : rows.length === 0 ? (
         <Empty title={q || niche || st ? "Ничего не найдено" : "Клиентов пока нет"} text={q || niche || st ? "Измените условия поиска." : "Клиенты появятся здесь автоматически, когда вы добавите первый проект."} />
       ) : (

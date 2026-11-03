@@ -10,6 +10,8 @@ import { CONTENT_KIND } from "@/lib/labels";
 import { date, dateTime, localToIso, moneyMulti, overdueText, time, todayLocal } from "@/lib/format";
 import { balancesByCurrency, payrollDebt, receivables } from "@/lib/money-math";
 import { CAMPAIGN_STATUS, loadAdProjects, periodOf, statusTone } from "./campaigns/data";
+import { loadMood } from "@/lib/mood";
+import { bishkekHour, greetingFor, mascotSrc } from "@/lib/mascot";
 
 export const metadata = { title: "Главная" };
 
@@ -59,10 +61,11 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     s.can("campaigns.manage") || s.can("campaigns.view_all") ? supabase.from("campaigns").select("id", head).eq("status", "active") : none,
     supabase.from("project_admin_checks").select("id", head).eq("admin_id", s.userId).eq("day", today).is("completed_at", null),
   ]);
-  const [ads, balances, payroll] = await Promise.all([
+  const [ads, balances, payroll, mood] = await Promise.all([
     adsOn ? loadAdProjects({ period: periodOf({}), status: "work" }) : Promise.resolve(null),
     finance ? supabase.from("v_account_balances").select("currency,balance_minor") : Promise.resolve({ data: [] }),
     payrollOn ? supabase.from("v_payroll_balance").select("accrued_minor,paid_minor,currency") : Promise.resolve({ data: [] }),
+    loadMood(s.profile as { full_name?: string | null; greet_name?: string | null; address_form?: string | null } | null),
   ]);
   const adCards = ads && !ads.error ? ads.cards : [];
   const adChecks = adCards.filter((c) => c.overdueCheck).length;
@@ -109,12 +112,18 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
     { show: adChecks > 0, n: adChecks, label: "Рекламу пора проверить", href: "/app/campaigns", tone: "warn" as const },
   ].filter((a) => a.show);
 
-  const first = (s.profile?.full_name || "").split(" ")[0];
   return (
     <>
-      <div className="mb-5">
-        <p className="text-sm text-muted first-letter:uppercase">{new Intl.DateTimeFormat("ru-RU", { timeZone: "Asia/Bishkek", weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
-        <h1 className="font-display text-[22px] font-semibold leading-tight md:text-[28px]">{first ? `${first}, добрый день` : "Добрый день"}</h1>
+      {/* илбирс: эмоция по своим делам (просрочки, срок сегодня, всё сдано) */}
+      <div className="mascot-card mb-5 rounded-3xl border border-line bg-surface p-3 pr-4 md:p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={mascotSrc(mood.emotion, "sm")} alt="" width={104} height={104} decoding="async" />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted first-letter:uppercase">{new Intl.DateTimeFormat("ru-RU", { timeZone: "Asia/Bishkek", weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
+          <h1 className="font-display text-[20px] font-bold leading-tight md:text-[26px]">{greetingFor(bishkekHour())}{mood.name ? `, ${mood.name}` : ""}!</h1>
+          <p className="mt-1 text-sm text-muted">{mood.phrase}</p>
+          {mood.action && <Link href={mood.action.href} className="mt-1.5 inline-flex min-h-9 items-center text-sm font-semibold text-primary">{mood.action.label} →</Link>}
+        </div>
       </div>
       {sp.denied ? <div className="mb-4"><Notice tone="warn">Раздел недоступен для вашей роли.</Notice></div> : null}
 

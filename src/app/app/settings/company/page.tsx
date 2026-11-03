@@ -12,7 +12,7 @@ export default async function Company() {
   const s = await requireActive();
   if (!s.isOwner) redirect("/app/settings");
   const supabase = await createClient();
-  const { data } = await supabase.from("app_settings").select("key,value,label").order("key");
+  const { data } = await supabase.from("app_settings").select("key,value,label").neq("key", "mascot_phrases").order("key");
   return (
     <SettingsPage title="Параметры компании" subtitle="Изменения записываются в журнал аудита">
       <Card>

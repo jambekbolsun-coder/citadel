@@ -95,9 +95,12 @@ export function Field({ label, children, hint, className }: { label: string; chi
   );
 }
 
-export function Empty({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {
+/** Пустой экран: спокойный илбирс (mascot={false} — без него, например в узких таблицах). */
+export function Empty({ title, text, action, mascot = true }: { title: string; text?: string; action?: ReactNode; mascot?: boolean }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line px-6 py-10 text-center">
+    <div className="rounded-2xl border border-dashed border-line px-6 py-8 text-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {mascot && <img src="/mascot/calm-sm.webp" alt="" width={96} height={96} loading="lazy" decoding="async" className="mx-auto mb-2 h-24 w-24 object-contain opacity-95" />}
       <div className="font-semibold">{title}</div>
       {text && <p className="mx-auto mt-1 max-w-md text-sm text-muted">{text}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}

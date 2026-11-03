@@ -5,6 +5,7 @@ import { plusActions, resolveWorkTab, visibleNav, WORK_TAB_COOKIE, WORK_TABS } f
 import { AppHeader, BottomNav, PlusSheet, Sidebar } from "@/components/shell";
 import { PinLock } from "@/components/pin-lock";
 import { WebVitals } from "@/components/web-vitals";
+import { GreetingSplash } from "@/components/greeting-splash";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
       <BottomNav tab={{ href: tab.href, label: tab.label, icon: tab.icon, match: tab.match }} />
       <PlusSheet actions={plusActions(s)} />
       <PinLock userId={s.userId} />
+      <GreetingSplash userId={s.userId} />
       <WebVitals />
     </div>
   );

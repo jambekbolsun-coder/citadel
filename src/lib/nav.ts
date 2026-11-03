@@ -168,6 +168,7 @@ export function settingsGroups(v: Viewer): SettingsGroup[] {
     has("/app/tariffs") && { href: "/app/tariffs", label: "Тарифы", icon: "tag" },
     v.can("projects.manage") && { href: "/app/settings/capacity", label: "Нормативы производства", icon: "gauge" },
     v.isOwner && { href: "/app/settings/company", label: "Параметры компании", icon: "building" },
+    v.isOwner && { href: "/app/settings/mascot", label: "Илбирс и приветствие", icon: "smile" },
     has("/app/cms") && { href: "/app/cms", label: "Публичный сайт", icon: "globe" },
     has("/app/audit") && { href: "/app/audit", label: "Журнал аудита", icon: "scroll" },
   ]);
@@ -201,6 +202,7 @@ export function titleFor(path: string): string {
     "/app/settings/sessions": "Сеансы",
     "/app/settings/capacity": "Нормативы",
     "/app/settings/company": "Компания",
+    "/app/settings/mascot": "Илбирс",
     "/app/tasks/new": "Новая задача",
     "/app/calendar/new": "Запись в календарь",
     "/app/finance/expense": "Новый расход",

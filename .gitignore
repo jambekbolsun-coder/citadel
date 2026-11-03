@@ -43,3 +43,6 @@ next-env.d.ts
 # секреты и локальные файлы
 !.env.example
 .claude/settings.local.json
+
+# исходные рендеры илбирса с белым фоном (в git — только прозрачные мастер-файлы assets/mascot/transparent)
+assets/mascot/0*.png
