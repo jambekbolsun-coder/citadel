@@ -9,6 +9,7 @@ import { dateTime } from "@/lib/format";
 import { activePeople, nameOf } from "@/lib/data";
 import { pageRange } from "@/lib/paging";
 import { createManualLead, takeLead } from "./actions";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const metadata = { title: "Заявки и продажи" };
 
@@ -25,7 +26,7 @@ export default async function Leads({ searchParams }: PageProps<"/app/leads">) {
   else query = query.not("stage", "in", "(won,lost)");
   if (mine) query = query.eq("assignee_id", s.userId);
   if (q) query = query.or(`name.ilike.%${q.replace(/[%,()]/g, "")}%,phone.ilike.%${q.replace(/[%,()]/g, "")}%,business.ilike.%${q.replace(/[%,()]/g, "")}%`);
-  const [{ data: leads }, people, { data: counts }] = await Promise.all([query, activePeople(), supabase.from("leads").select("stage")]);
+  const [{ data: leads }, people, { data: counts }] = await Promise.all([query, activePeople(), fetchAll<{ stage: string }>((a, b) => supabase.from("leads").select("id,stage").order("id").range(a, b))]);
   const byStage: Record<string, number> = {};
   (counts ?? []).forEach((c: { stage: string }) => (byStage[c.stage] = (byStage[c.stage] ?? 0) + 1));
   const rows = (leads ?? []) as { id: string; number: number; name: string; phone: string; business: string | null; service: string | null; stage: string; assignee_id: string | null; created_at: string; source: string; first_opened_at: string | null; escalated_at: string | null }[];

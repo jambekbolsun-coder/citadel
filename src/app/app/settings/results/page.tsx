@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, Empty, Stat } from "@/components/ui";
 import { SettingsPage } from "@/components/settings-list";
 import { CONTENT_KIND } from "@/lib/labels";
-import { date } from "@/lib/format";
+import { date, localToIso, todayLocal } from "@/lib/format";
 import { BADGES, type Stats } from "@/lib/achievements";
 import { BadgeGrid, MonthSummaryCard, StreakChip, earnedCount } from "@/components/achievements";
 
@@ -13,7 +13,8 @@ export const metadata = { title: "Мои результаты" };
 export default async function Results() {
   const s = await requireActive();
   const supabase = await createClient();
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  // начало месяца по Бишкеку (на сервере Vercel время UTC — раньше месяц начинался на 6 часов позже)
+  const monthStart = localToIso(`${todayLocal().slice(0, 7)}-01`);
   const head = { count: "exact" as const, head: true };
   const [tasksAll, tasksMonth, contentAll, contentMonth, { data: recentTasks }, { data: recentContent }, { data: ach }] = await Promise.all([
     supabase.from("tasks").select("id", head).eq("assignee_id", s.userId).eq("status", "done"),

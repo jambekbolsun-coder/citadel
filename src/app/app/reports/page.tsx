@@ -6,6 +6,7 @@ import { activePeople } from "@/lib/data";
 import { CONTENT_KIND } from "@/lib/labels";
 import { moneyMulti, todayLocal } from "@/lib/format";
 import { cashSummary, payrollDebt, receivables } from "@/lib/money-math";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const metadata = { title: "Отчёты" };
 
@@ -61,10 +62,11 @@ async function PersonFilter({ value }: { value: string }) {
 
 async function PlanFact({ project }: { project: string }) {
   const supabase = await createClient();
-  const [{ data: periods, error: e1 }, { data: progress, error: e2 }] = await Promise.all([
-    supabase.from("project_periods").select("id,label,seq,status,projects!inner(id,name,status)").eq("status", "open").eq("projects.status", "in_progress"),
-    supabase.from("v_period_progress").select("*"),
-  ]);
+  const { data: periods, error: e1 } = await supabase.from("project_periods").select("id,label,seq,status,projects!inner(id,name,status)").eq("status", "open").eq("projects.status", "in_progress");
+  const periodIds = ((periods ?? []) as { id: string }[]).map((p) => p.id);
+  const { data: progress, error: e2 } = periodIds.length
+    ? await fetchAll<Row>((a, b) => supabase.from("v_period_progress").select("*").in("period_id", periodIds).order("period_id").order("kind").range(a, b))
+    : { data: [] as Row[], error: null };
   if (e1 || e2) return <LoadError retry="/app/reports" />;
   const rows = (progress ?? []) as Row[];
   const all = (periods ?? []) as unknown as { id: string; label: string; seq: number; projects: { id: string; name: string } }[];
@@ -119,17 +121,24 @@ async function PlanFact({ project }: { project: string }) {
 async function People({ from, to, person, canOpen }: { from: string; to: string; person: string; canOpen: boolean }) {
   const supabase = await createClient();
   const people = await activePeople();
-  let qContent = supabase.from("content_items").select("assignee_id,prep_due,submitted_at,approved_at").gte("approved_at", `${from}T00:00:00+06:00`).lte("approved_at", `${to}T23:59:59+06:00`);
-  let qTasks = supabase.from("tasks").select("assignee_id,due_at,completed_at").eq("status", "done").gte("completed_at", `${from}T00:00:00+06:00`).lte("completed_at", `${to}T23:59:59+06:00`);
-  let qOpen = supabase.from("content_items").select("assignee_id,prep_due").not("status", "in", "(done,published,cancelled,paused,review)");
-  let qReview = supabase.from("content_items").select("assignee_id").eq("status", "review");
-  if (person) {
-    qContent = qContent.eq("assignee_id", person);
-    qTasks = qTasks.eq("assignee_id", person);
-    qOpen = qOpen.eq("assignee_id", person);
-    qReview = qReview.eq("assignee_id", person);
-  }
-  const [content, tasks, open, review] = await Promise.all([qContent, qTasks, qOpen, qReview]);
+  // каждый запрос собирается заново для каждой части (fetchAll), фильтр по сотруднику — если выбран
+  const qContent = (a: number, b: number) => {
+    const q = supabase.from("content_items").select("assignee_id,prep_due,submitted_at,approved_at").gte("approved_at", `${from}T00:00:00+06:00`).lte("approved_at", `${to}T23:59:59+06:00`);
+    return (person ? q.eq("assignee_id", person) : q).order("id").range(a, b);
+  };
+  const qTasks = (a: number, b: number) => {
+    const q = supabase.from("tasks").select("assignee_id,due_at,completed_at").eq("status", "done").gte("completed_at", `${from}T00:00:00+06:00`).lte("completed_at", `${to}T23:59:59+06:00`);
+    return (person ? q.eq("assignee_id", person) : q).order("id").range(a, b);
+  };
+  const qOpen = (a: number, b: number) => {
+    const q = supabase.from("content_items").select("assignee_id,prep_due").not("status", "in", "(done,published,cancelled,paused,review)");
+    return (person ? q.eq("assignee_id", person) : q).order("id").range(a, b);
+  };
+  const qReview = (a: number, b: number) => {
+    const q = supabase.from("content_items").select("assignee_id").eq("status", "review");
+    return (person ? q.eq("assignee_id", person) : q).order("id").range(a, b);
+  };
+  const [content, tasks, open, review] = await Promise.all([fetchAll(qContent), fetchAll(qTasks), fetchAll(qOpen), fetchAll(qReview)]);
   if (content.error || tasks.error || open.error || review.error) return <LoadError retry={`/app/reports?tab=people&from=${from}&to=${to}`} />;
   const stat = new Map<string, { onTime: number; late: number; open: number; overdue: number; review: number }>();
   const g = (id: string) => stat.get(id) ?? stat.set(id, { onTime: 0, late: 0, open: 0, overdue: 0, review: 0 }).get(id)!;
@@ -180,7 +189,7 @@ async function People({ from, to, person, canOpen }: { from: string; to: string;
 async function FinanceReport({ from, to }: { from: string; to: string }) {
   const supabase = await createClient();
   const [tx, inv, pb] = await Promise.all([
-    supabase.from("money_transactions").select("direction,amount_minor,currency,source_type").gte("occurred_on", from).lte("occurred_on", to).limit(20000),
+    fetchAll<{ direction: string; amount_minor: number; currency: string; source_type: string }>((a, b) => supabase.from("money_transactions").select("direction,amount_minor,currency,source_type").gte("occurred_on", from).lte("occurred_on", to).order("id").range(a, b)),
     supabase.from("v_invoice_status").select("amount_minor,paid_minor,pay_state,issued_on,currency").neq("pay_state", "void"),
     supabase.from("v_payroll_balance").select("accrued_minor,paid_minor,currency"),
   ]);

@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { action, check, humanError, int, opt, str } from "@/lib/actions";
-import { parseMoney } from "@/lib/format";
+import { parseMoney, todayLocal } from "@/lib/format";
 
 const KINDS = ["video", "story", "post", "carousel", "ad_creative", "shoot"];
 const rp = (id: string) => revalidatePath(`/app/projects/${id}`);
@@ -201,7 +201,9 @@ export const createInvoice = action(async (fd) => {
   const { data: u } = await supabase.auth.getUser();
   const amount = parseMoney(fd.get("amount"));
   if (!amount) throw new Error("Укажите сумму");
-  check(await supabase.from("invoices").insert({ project_id: str(fd, "id"), period_id: opt(fd, "period_id"), title: str(fd, "title") || "Счёт", amount_minor: amount, due_on: str(fd, "due_on"), created_by: u.user!.id }));
+  // счёт — в валюте договора (раньше всегда KGS, и долларовый договор получал счета в сомах)
+  const { data: contract } = await supabase.from("project_contracts").select("currency").eq("project_id", str(fd, "id")).maybeSingle();
+  check(await supabase.from("invoices").insert({ project_id: str(fd, "id"), period_id: opt(fd, "period_id"), title: str(fd, "title") || "Счёт", amount_minor: amount, currency: contract?.currency ?? "KGS", due_on: str(fd, "due_on"), created_by: u.user!.id }));
   rp(str(fd, "id"));
   return "Счёт выставлен";
 });
@@ -223,14 +225,16 @@ export const addPayment = action(async (fd) => {
   // платёж по счёту — в валюте счёта (иначе БД отклонит, 0015)
   const invoiceId = opt(fd, "invoice_id");
   const { data: inv } = invoiceId ? await supabase.from("invoices").select("currency").eq("id", invoiceId).maybeSingle() : { data: null };
+  // без счёта — в валюте договора
+  const { data: contract } = inv ? { data: null } : await supabase.from("project_contracts").select("currency").eq("project_id", str(fd, "id")).maybeSingle();
   check(
     await supabase.from("payments").insert({
       project_id: str(fd, "id"),
       invoice_id: invoiceId,
-      currency: inv?.currency ?? "KGS",
+      currency: inv?.currency ?? contract?.currency ?? "KGS",
       kind: str(fd, "kind") || "payment",
       amount_minor: amount,
-      paid_on: str(fd, "paid_on") || new Date().toISOString().slice(0, 10),
+      paid_on: str(fd, "paid_on") || todayLocal(),
       method: opt(fd, "method"),
       account_id: opt(fd, "account_id"),
       note: opt(fd, "note"),

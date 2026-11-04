@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { action, check, int, opt, str } from "@/lib/actions";
+import { todayLocal } from "@/lib/format";
 import { parseLines, type Slide, type SlideImage } from "@/lib/site-model";
 import DEFAULTS from "@/lib/site-defaults.json";
 
@@ -74,7 +75,7 @@ async function uploadImages(fd: FormData) {
     const ext = IMAGE_TYPES[f.type];
     if (!ext) throw new Error(`«${f.name}»: допустимы WebP, PNG, JPEG или AVIF`);
     if (f.size > 5 * 1024 * 1024) throw new Error(`«${f.name}»: файл больше 5 МБ — уменьшите изображение`);
-    const path = `cms/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${ext}`;
+    const path = `cms/${todayLocal()}/${randomUUID()}.${ext}`;
     check(await supabase.storage.from("site").upload(path, f, { contentType: f.type, cacheControl: "31536000", upsert: false }));
     out.push({ src: `${SITE_BUCKET}${path}`, alt: str(fd, "upload_alt").slice(0, 200) || f.name.replace(/\.[^.]+$/, "") });
   }
@@ -158,7 +159,8 @@ export const moveBlock = action(async (fd) => {
   const supabase = await createClient();
   const key = str(fd, "key");
   const dir = str(fd, "dir");
-  const { data } = await supabase.from("site_blocks").select("key,sort").order("sort");
+  // только секции-слайды: скрытые старые блоки (0019) не участвуют, иначе «вверх» менялся местами с невидимым блоком
+  const { data } = await supabase.from("site_blocks").select("key,sort").eq("type", "slide").order("sort");
   const list = (data ?? []) as { key: string; sort: number }[];
   const i = list.findIndex((b) => b.key === key);
   const j = dir === "up" ? i - 1 : i + 1;

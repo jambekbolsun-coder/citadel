@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { balancesByCurrency, cashSummary, contentLeft, invoicePaid, nextPayDate, overpayments, payrollDebt, pieceworkTotal, receivables } from "./money-math";
+import { activeTermOn, balancesByCurrency, cashSummary, contentLeft, invoicePaid, isPayDay, nextPayDate, overpayments, payrollDebt, pieceworkTotal, receivables } from "./money-math";
 import { moneyMulti } from "./format";
 
 const som = (n: number) => n * 100;
@@ -96,5 +96,26 @@ describe("даты выплат (Asia/Bishkek)", () => {
     expect(nextPayDate(5, "2026-10-29")).toBe("2026-11-05");
     expect(nextPayDate(3, "2026-12-30")).toBe("2027-01-03");
     expect(nextPayDate(29, "2026-10-29")).toBe("2026-10-29");
+  });
+});
+
+describe("дни выплат в календаре", () => {
+  const terms = [
+    { user_id: "a", pay_days: [10, 25], effective_from: "2026-01-01", contract_end: null },
+    { user_id: "a", pay_days: [5, 20], effective_from: "2026-10-01", contract_end: null },
+  ];
+  it("после смены условий — только новые дни, без дублей", () => {
+    expect(activeTermOn(terms, "2026-09-30")?.pay_days).toEqual([10, 25]);
+    expect(activeTermOn(terms, "2026-10-01")?.pay_days).toEqual([5, 20]);
+  });
+  it("до первых условий и после конца договора — выплат нет", () => {
+    expect(activeTermOn(terms, "2025-12-31")).toBeNull();
+    expect(activeTermOn([{ pay_days: [10], effective_from: "2026-01-01", contract_end: "2026-06-30" }], "2026-07-10")).toBeNull();
+  });
+  it("31-е число в ноябре — 30-го, в феврале — 28-го", () => {
+    expect(isPayDay([31], "2026-11-30")).toBe(true);
+    expect(isPayDay([31], "2026-11-29")).toBe(false);
+    expect(isPayDay([30], "2027-02-28")).toBe(true);
+    expect(isPayDay([10, 25], "2026-11-25")).toBe(true);
   });
 });

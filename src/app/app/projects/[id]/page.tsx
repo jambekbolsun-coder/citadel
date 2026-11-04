@@ -398,8 +398,8 @@ async function FinanceTab({ projectId, periods, canConfirm, canCreate, canInvoic
   ]);
   const ps = (paid ?? {}) as PaidStatus;
   const cur = ps.currency ?? "KGS";
-  const invoices = (inv ?? []) as { id: string; number: number; title: string; amount_minor: number; paid_minor: number; due_on: string; pay_state: string; status: string }[];
-  const payments = (pays ?? []) as { id: string; invoice_id: string | null; kind: string; amount_minor: number; paid_on: string; method: string | null; status: string; created_by: string; confirmed_by: string | null; note: string | null; reject_reason: string | null }[];
+  const invoices = (inv ?? []) as { id: string; number: number; title: string; amount_minor: number; paid_minor: number; due_on: string; pay_state: string; status: string; currency: string }[];
+  const payments = (pays ?? []) as { id: string; invoice_id: string | null; kind: string; amount_minor: number; currency: string; paid_on: string; method: string | null; status: string; created_by: string; confirmed_by: string | null; note: string | null; reject_reason: string | null }[];
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-4">
@@ -414,7 +414,7 @@ async function FinanceTab({ projectId, periods, canConfirm, canCreate, canInvoic
             <thead><tr><th>№</th><th>Назначение</th><th>Сумма</th><th>Оплачено</th><th>Остаток</th><th>Срок</th><th>Статус</th>{canInvoice && <th />}</tr></thead>
             <tbody>{invoices.map((i) => (
               <tr key={i.id}>
-                <td>{i.number}</td><td>{i.title}</td><td>{money(i.amount_minor)}</td><td>{money(i.paid_minor)}</td><td>{money(Math.max(0, i.amount_minor - i.paid_minor))}</td><td>{date(i.due_on)}</td>
+                <td>{i.number}</td><td>{i.title}</td><td>{money(i.amount_minor, i.currency)}</td><td>{money(i.paid_minor, i.currency)}</td><td>{money(Math.max(0, i.amount_minor - i.paid_minor), i.currency)}</td><td>{date(i.due_on)}</td>
                 <td><Badge status={i.pay_state}>{PAY_STATE[i.pay_state]}</Badge></td>
                 {canInvoice && <td>{i.status !== "void" && i.paid_minor === 0 && (
                   <ActionForm action={A.voidInvoice} className="flex gap-1"><input type="hidden" name="id" value={projectId} /><input type="hidden" name="invoice_id" value={i.id} /><input name="reason" placeholder="причина" className="input min-h-[32px] w-28 py-1 text-xs" /><Submit variant="ghost" className="min-h-[32px] px-2 text-xs">Аннулировать</Submit></ActionForm>
@@ -442,7 +442,7 @@ async function FinanceTab({ projectId, periods, canConfirm, canCreate, canInvoic
             <select name="kind" className="input"><option value="payment">Поступление</option><option value="refund">Возврат клиенту</option></select>
             <input name="amount" placeholder="Сумма" inputMode="decimal" required className="input" />
             <input name="paid_on" type="date" defaultValue={todayLocal()} className="input" />
-            <select name="account_id" className="input"><option value="">Счёт/касса</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
+            <select name="account_id" className="input"><option value="">Счёт/касса</option>{accs.map((a) => <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</select>
             <input name="method" placeholder="Способ (наличные, перевод…)" className="input" />
             <input name="note" placeholder="Комментарий / документ" className="input" />
             <Submit variant="secondary">Внести</Submit>
@@ -453,14 +453,14 @@ async function FinanceTab({ projectId, periods, canConfirm, canCreate, canInvoic
             <thead><tr><th>Дата</th><th>Тип</th><th>Сумма</th><th>Внёс</th><th>Статус</th><th>Подтвердил</th><th /></tr></thead>
             <tbody>{payments.map((pm) => (
               <tr key={pm.id}>
-                <td className="whitespace-nowrap">{date(pm.paid_on)}</td><td>{pm.kind === "refund" ? "Возврат" : "Поступление"}</td><td>{money(pm.amount_minor)}</td>
+                <td className="whitespace-nowrap">{date(pm.paid_on)}</td><td>{pm.kind === "refund" ? "Возврат" : "Поступление"}</td><td>{money(pm.amount_minor, pm.currency)}</td>
                 <td className="text-sm">{nameOf(people, pm.created_by)}</td>
                 <td><Badge status={pm.status}>{PAYMENT_STATUS[pm.status]}</Badge>{pm.reject_reason && <div className="text-xs text-bad">{pm.reject_reason}</div>}</td>
                 <td className="text-sm">{nameOf(people, pm.confirmed_by)}</td>
                 <td>{canConfirm && pm.status === "pending" && (pm.created_by !== me || isOwner ? (
                   <div className="flex flex-col gap-1">
                     <ActionForm action={A.confirmPayment} className="flex gap-1"><input type="hidden" name="id" value={projectId} /><input type="hidden" name="payment_id" value={pm.id} />
-                      <select name="account_id" className="input min-h-[32px] py-1 text-xs">{accs.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
+                      <select name="account_id" className="input min-h-[32px] py-1 text-xs">{accs.filter((a) => a.currency === pm.currency).map((a) => <option key={a.id} value={a.id}>{a.name} · {a.currency}</option>)}</select>
                       <Submit className="min-h-[32px] px-2 text-xs">Подтвердить</Submit></ActionForm>
                     <ActionForm action={A.rejectPayment} className="flex gap-1"><input type="hidden" name="id" value={projectId} /><input type="hidden" name="payment_id" value={pm.id} /><input name="reason" placeholder="причина" className="input min-h-[32px] py-1 text-xs" /><Submit variant="ghost" className="min-h-[32px] px-2 text-xs">Отклонить</Submit></ActionForm>
                   </div>

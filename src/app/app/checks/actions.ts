@@ -16,7 +16,7 @@ export const startCheck = action(async (fd) => {
 export const saveCheck = action(async (fd) => {
   const supabase = await createClient();
   const id = str(fd, "id");
-  const { data: cur } = await supabase.from("project_admin_checks").select("contacts").eq("id", id).single();
+  const { data: cur } = await supabase.from("project_admin_checks").select("contacts,completed_at").eq("id", id).single();
   const contacts = [...((cur?.contacts as unknown[]) ?? [])];
   if (str(fd, "c_with")) {
     contacts.push({ with: str(fd, "c_with"), channel: str(fd, "c_channel"), at: new Date().toISOString(), reason: str(fd, "c_reason"), result: str(fd, "c_result"), promise: str(fd, "c_promise"), next: str(fd, "c_next") });
@@ -26,7 +26,7 @@ export const saveCheck = action(async (fd) => {
   check(
     await supabase
       .from("project_admin_checks")
-      .update({ summary: opt(fd, "summary"), stories_note: opt(fd, "stories_note"), delays: opt(fd, "delays"), contacts, escalated: fd.get("escalated") === "on", completed_at: complete ? new Date().toISOString() : null })
+      .update({ summary: opt(fd, "summary"), stories_note: opt(fd, "stories_note"), delays: opt(fd, "delays"), contacts, escalated: fd.get("escalated") === "on", completed_at: complete ? (cur?.completed_at ?? new Date().toISOString()) : null })
       .eq("id", id),
   );
   revalidatePath(`/app/checks/${id}`);

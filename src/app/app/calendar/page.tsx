@@ -10,6 +10,7 @@ import { localDateOf, localToIso, time, todayLocal } from "@/lib/format";
 import { deleteCalendarEvent } from "./actions";
 import { CalendarDnd, DragItem, DropDay } from "./dnd";
 import { EventList, MonthMobile, type CalEvent } from "./views";
+import { activeTermOn, isPayDay } from "@/lib/money-math";
 
 export const metadata = { title: "Календарь" };
 
@@ -143,7 +144,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/app/cal
       ? (() => { let x = supabase.from("tasks").select("id,title,status,due_at,assignee_id,project_id,projects(name)").gte("due_at", from).lte("due_at", to).neq("status", "cancelled").limit(1000); if (project) x = x.eq("project_id", project); if (person) x = x.eq("assignee_id", person); return x; })()
       : Promise.resolve({ data: [] }),
     (() => { let x = supabase.from("calendar_events").select("id,user_id,kind,title,starts_at,ends_at").lte("starts_at", to).gte("ends_at", from).limit(500); if (person) x = x.eq("user_id", person); return x; })(),
-    want("payday") && s.can("payroll.view") ? supabase.from("salary_terms").select("user_id,pay_days,effective_from") : Promise.resolve({ data: [] }),
+    want("payday") && s.can("payroll.view") ? supabase.from("salary_terms").select("user_id,pay_days,effective_from,contract_end") : Promise.resolve({ data: [] }),
   ]);
 
   const ev: Ev[] = [];
@@ -172,9 +173,15 @@ export default async function CalendarPage({ searchParams }: PageProps<"/app/cal
         d = addDays(d, 1);
       }
     }
-  for (const t of (termsQ.data ?? []) as { user_id: string; pay_days: number[] }[]) {
+  // дни выплат — только по условиям, действующим в этот день (раньше брались все прошлые условия, и были дубли)
+  const termsByUser = new Map<string, { user_id: string; pay_days: number[]; effective_from: string; contract_end: string | null }[]>();
+  for (const t of (termsQ.data ?? []) as { user_id: string; pay_days: number[]; effective_from: string; contract_end: string | null }[]) {
     if (person && t.user_id !== person) continue;
-    for (let d = start; d <= end; d = addDays(d, 1)) if (t.pay_days.includes(Number(d.slice(8)))) push({ id: t.user_id + d, ref: "", day: d, at: null, title: `Выплата: ${nameOf(people, t.user_id)}`, kind: "payday", href: "/app/payroll", tone: "warn", who: null, project: null, status: null });
+    (termsByUser.get(t.user_id) ?? termsByUser.set(t.user_id, []).get(t.user_id)!).push(t);
+  }
+  for (const [uid, list] of termsByUser) {
+    const t = { user_id: uid };
+    for (let d = start; d <= end; d = addDays(d, 1)) if (isPayDay(activeTermOn(list, d)?.pay_days ?? [], d)) push({ id: t.user_id + d, ref: "", day: d, at: null, title: `Выплата: ${nameOf(people, t.user_id)}`, kind: "payday", href: "/app/payroll", tone: "warn", who: null, project: null, status: null });
   }
   const filtered = q ? ev.filter((e) => e.title.toLowerCase().includes(q) || (e.project ?? "").toLowerCase().includes(q)) : ev;
   const byDay: Record<string, Ev[]> = {};

@@ -120,3 +120,17 @@ export function nextPayDate(payDay: number, today: string): string {
   if (cur >= today) return cur;
   return m === 12 ? inMonth(y + 1, 1) : inMonth(y, m + 1);
 }
+
+/** Условия зарплаты, действующие в этот день: последние по дате вступления, если договор не закончился раньше. */
+export function activeTermOn<T extends { effective_from: string; contract_end: string | null }>(terms: T[], day: string): T | null {
+  let best: T | null = null;
+  for (const t of terms) if (t.effective_from <= day && (!best || t.effective_from > best.effective_from)) best = t;
+  return best && (!best.contract_end || best.contract_end >= day) ? best : null;
+}
+
+/** День выплаты: число из графика; 29/30/31 в коротком месяце — в последний день месяца (как nextPayDate). */
+export function isPayDay(payDays: number[], day: string): boolean {
+  const [y, m, d] = day.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return payDays.some((p) => Math.min(p, last) === d);
+}

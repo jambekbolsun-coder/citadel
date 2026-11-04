@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { action, check, int, opt, str } from "@/lib/actions";
-import { parseMoney } from "@/lib/format";
+import { parseMoney, todayLocal } from "@/lib/format";
 
 const rf = () => revalidatePath("/app/finance");
 
@@ -23,7 +23,7 @@ export const createExpense = action(async (fd) => {
   const file = fd.get("receipt");
   if (file instanceof File && file.size > 0) {
     if (file.size > 4 * 1024 * 1024) throw new Error("Файл чека — не больше 4 МБ");
-    const path = `receipts/${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+    const path = `receipts/${todayLocal().slice(0, 7)}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
     check(await supabase.storage.from("finance").upload(path, file, { contentType: file.type }));
     receipt = path;
   }
@@ -84,7 +84,7 @@ export const renameCategory = action(async (fd) => {
 
 export const createAccount = action(async (fd) => {
   const supabase = await createClient();
-  check(await supabase.from("financial_accounts").insert({ name: str(fd, "name"), kind: str(fd, "kind"), currency: str(fd, "currency") || "KGS", opening_balance_minor: parseMoney(fd.get("opening")) ?? 0, opening_date: str(fd, "opening_date") || new Date().toISOString().slice(0, 10) }));
+  check(await supabase.from("financial_accounts").insert({ name: str(fd, "name"), kind: str(fd, "kind"), currency: str(fd, "currency") || "KGS", opening_balance_minor: parseMoney(fd.get("opening")) ?? 0, opening_date: str(fd, "opening_date") || todayLocal() }));
   rf();
   return "Счёт создан";
 });

@@ -14,6 +14,7 @@ import { balancesByCurrency, cashSummary, overpayments, payrollDebt, receivables
 import { confirmPayment, rejectPayment } from "@/app/app/projects/actions";
 import * as A from "./actions";
 import { ExpenseForm } from "./expense-form";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const metadata = { title: "Бухгалтерия" };
 
@@ -88,7 +89,7 @@ async function Overview({ from, to, can }: { from: string; to: string; can: { pa
   const supabase = await createClient();
   const [bal, tx, inv, pb, exp] = await Promise.all([
     supabase.from("v_account_balances").select("id,name,currency,opening_balance_minor,inflow_minor,outflow_minor,balance_minor"),
-    supabase.from("money_transactions").select("direction,amount_minor,currency,source_type").gte("occurred_on", from).lte("occurred_on", to).limit(20000),
+    fetchAll<{ direction: string; amount_minor: number; currency: string; source_type: string }>((a, b) => supabase.from("money_transactions").select("direction,amount_minor,currency,source_type").gte("occurred_on", from).lte("occurred_on", to).order("id").range(a, b)),
     supabase.from("v_invoice_status").select("amount_minor,paid_minor,pay_state,issued_on,currency").neq("pay_state", "void"),
     supabase.from("v_payroll_balance").select("accrued_minor,paid_minor,currency"),
     supabase.from("expenses").select("amount_minor,currency,expense_categories(name)").eq("status", "confirmed").gte("purchased_on", from).lte("purchased_on", to),

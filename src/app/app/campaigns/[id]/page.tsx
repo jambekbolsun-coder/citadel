@@ -8,13 +8,14 @@ import { ActionForm, Submit } from "@/components/action-form";
 import { PeopleSelect } from "@/components/people-select";
 import { ProjectAccess } from "@/components/project-access";
 import { activePeople, nameOf, type Person } from "@/lib/data";
-import { date, dateTime, minorToInput, money, moneyMulti, todayLocal } from "@/lib/format";
+import { date, dateTime, localDateOf, minorToInput, money, moneyMulti, todayLocal } from "@/lib/format";
 import { activeDailyBudget, activeDays, cpl, nextCheck, planForPeriod, spendTotals, type BudgetEvent, type SpendEntry, type StatusEvent } from "@/lib/ads-math";
 import { CONTENT_KIND } from "@/lib/labels";
 import { CAMPAIGN_STATUS, CREATIVE_KIND, CREATIVE_STATUS, PLATFORM, periodOf, socialLinks, statusTone, telLink, waLink, type ClientInfo, type Period } from "../data";
 import { PeriodChips } from "../period-chips";
 import { SpendForm } from "../spend-form";
 import * as A from "../actions";
+import { fetchAll } from "@/lib/fetch-all";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SOURCE: Record<string, string> = { manual: "вручную", legacy: "перенесено из старых показателей", allocation: "распределение", correction: "исправление" };
@@ -55,7 +56,7 @@ export default async function CampaignPage({ params, searchParams }: PageProps<"
   const period = periodOf(sp);
   const [cr, en, sh, bh, cl, people, canEditRes] = await Promise.all([
     supabase.from("campaign_creatives").select("*, content_items(id,title,kind)").eq("campaign_id", id).order("seq"),
-    supabase.from("campaign_spend_entries").select("id,creative_id,day,currency,spend_minor,leads,impressions,clicks,note,source,created_by,created_at,superseded_at,superseded_by,supersede_reason,replaces_id").eq("campaign_id", id).order("day", { ascending: false }).order("created_at", { ascending: false }).limit(3000),
+    fetchAll((a, b) => supabase.from("campaign_spend_entries").select("id,creative_id,day,currency,spend_minor,leads,impressions,clicks,note,source,created_by,created_at,superseded_at,superseded_by,supersede_reason,replaces_id").eq("campaign_id", id).order("day", { ascending: false }).order("created_at", { ascending: false }).order("id").range(a, b)),
     supabase.from("ad_status_history").select("creative_id,from_status,to_status,effective_on,reason,actor_id,created_at").eq("campaign_id", id).order("created_at"),
     supabase.from("ad_budget_history").select("creative_id,daily_budget_minor,currency,effective_from,reason,actor_id,created_at").eq("campaign_id", id).order("created_at"),
     supabase.from("ad_change_log").select("creative_id,field,old_value,new_value,actor_id,created_at").eq("campaign_id", id).order("created_at", { ascending: false }).limit(200),
@@ -113,7 +114,7 @@ function Overview({ camp, creatives, entries, status, budget, people, canEdit, p
 }) {
   const plan = planForPeriod({ from: period.from, to: period.to, historyFrom: camp.history_from, creativeIds: creatives.map((k) => k.id), status, budget });
   const days = activeDays({ from: period.from < (camp.started_on ?? period.from) ? camp.started_on ?? period.from : period.from, to: period.to, historyFrom: camp.history_from, status });
-  const nc = camp.status === "active" ? nextCheck(allTotals.lastDay, camp.started_on ?? camp.created_at.slice(0, 10), camp.check_every_days) : null;
+  const nc = camp.status === "active" ? nextCheck(allTotals.lastDay, camp.started_on ?? localDateOf(camp.created_at), camp.check_every_days) : null;
   const overdue = !!nc && nc <= today;
   const unallocated: Record<string, number> = {};
   for (const e of entries) if (!e.superseded_at && !e.creative_id) unallocated[`${e.day}|${e.currency}`] = (unallocated[`${e.day}|${e.currency}`] ?? 0) + Number(e.spend_minor);

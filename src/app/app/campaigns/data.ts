@@ -1,7 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { activeDailyBudget, addDays, addTo, nextCheck, spendTotals, type Money, type SpendEntry } from "@/lib/ads-math";
-import { todayLocal } from "@/lib/format";
+import { localDateOf, todayLocal } from "@/lib/format";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const CAMPAIGN_STATUS: Record<string, string> = { draft: "Черновик", active: "Работает", paused: "Пауза", finished: "Завершена" };
 export const CREATIVE_STATUS: Record<string, string> = { active: "Включён", paused: "Пауза", off: "Выключен" };
@@ -52,7 +53,7 @@ export async function loadAdProjects(opts: { period: Period; owner?: string | nu
   const ids = rows.map((r) => r.id);
   let entries: (SpendEntry & { campaign_id: string })[] = [];
   if (ids.length) {
-    const r = await supabase.from("campaign_spend_entries").select("campaign_id,creative_id,day,currency,spend_minor,leads").in("campaign_id", ids).is("superseded_at", null).limit(20000);
+    const r = await fetchAll<SpendEntry & { campaign_id: string }>((a, b) => supabase.from("campaign_spend_entries").select("campaign_id,creative_id,day,currency,spend_minor,leads").in("campaign_id", ids).is("superseded_at", null).order("id").range(a, b));
     if (r.error) return { error: r.error, cards: [] as ProjectCard[], totals: null };
     entries = (r.data ?? []) as typeof entries;
   }
@@ -75,7 +76,7 @@ export async function loadAdProjects(opts: { period: Period; owner?: string | nu
     if (c.started_on && (!card.startedOn || c.started_on < card.startedOn)) card.startedOn = c.started_on;
     if (all.lastDay && (!card.lastDay || all.lastDay > card.lastDay)) card.lastDay = all.lastDay;
     if (c.status === "active") {
-      const nc = nextCheck(all.lastDay, c.started_on ?? c.created_at.slice(0, 10), c.check_every_days);
+      const nc = nextCheck(all.lastDay, c.started_on ?? localDateOf(c.created_at), c.check_every_days);
       if (nc && (!card.nextCheck || nc < card.nextCheck)) card.nextCheck = nc;
       if (nc && nc <= today) card.overdueCheck = true;
     }

@@ -6,6 +6,7 @@ import { PROJECT_KIND, PROJECT_STATUS } from "@/lib/labels";
 import { activePeople, nameOf } from "@/lib/data";
 import { pageRange, pageSlice } from "@/lib/paging";
 import { date } from "@/lib/format";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const metadata = { title: "Проекты" };
 
@@ -23,7 +24,7 @@ export default async function Projects({ searchParams }: PageProps<"/app/project
   const [{ data }, people, { data: overdueRows }] = await Promise.all([
     query,
     activePeople(),
-    supabase.from("content_items").select("project_id").not("status", "in", "(done,published,cancelled,paused)").lt("prep_due", new Date().toISOString()),
+    fetchAll<{ project_id: string }>((a, b) => supabase.from("content_items").select("id,project_id").not("status", "in", "(done,published,cancelled,paused)").lt("prep_due", new Date().toISOString()).order("id").range(a, b)),
   ]);
   const overdueBy: Record<string, number> = {};
   (overdueRows ?? []).forEach((r: { project_id: string }) => (overdueBy[r.project_id] = (overdueBy[r.project_id] ?? 0) + 1));

@@ -33,8 +33,13 @@ export default async function Payroll({ searchParams }: PageProps<"/app/payroll"
   if (e1 || e2 || e3 || e4) return <><PageHeader title="Зарплаты" /><LoadError retry={`/app/payroll?month=${month}`} /></>;
   // актуальные условия на месяц для каждого сотрудника
   const current = new Map<string, { user_id: string; pay_type: string; base_minor: number; pay_days: number[]; name: string; status: string }>();
-  for (const t of (terms ?? []) as unknown as { user_id: string; pay_type: string; base_minor: number; pay_days: number[]; effective_from: string; profiles: { full_name: string; status: string } }[]) {
-    if (t.effective_from < m2 && !current.has(t.user_id)) current.set(t.user_id, { ...t, name: t.profiles?.full_name ?? "", status: t.profiles?.status });
+  // последние условия на месяц; если договор закончился до начала месяца — сотрудника в месяце нет
+  const seen = new Set<string>();
+  for (const t of (terms ?? []) as unknown as { user_id: string; pay_type: string; base_minor: number; pay_days: number[]; effective_from: string; contract_end: string | null; profiles: { full_name: string; status: string } }[]) {
+    if (t.effective_from >= m2 || seen.has(t.user_id)) continue;
+    seen.add(t.user_id);
+    if (t.contract_end && t.contract_end < m1) continue;
+    current.set(t.user_id, { ...t, name: t.profiles?.full_name ?? "", status: t.profiles?.status });
   }
   const accruals = new Map(((acc ?? []) as Accrual[]).map((a) => [a.user_id, a]));
   // баланс — по сотруднику и валюте (v_payroll_balance, 0015)

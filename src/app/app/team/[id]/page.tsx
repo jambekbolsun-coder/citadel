@@ -83,8 +83,8 @@ export default async function Employee({ params }: PageProps<"/app/team/[id]">) 
           {s.can("payroll.view") && (
             <Card title="Условия зарплаты (история)">
               {(terms ?? []).length === 0 ? <p className="text-sm text-muted">Условия не заданы.</p> : (
-                <ul className="space-y-2 text-sm">{(terms ?? []).map((t: { id: string; pay_type: string; base_minor: number; piece_rules: { kind: string; rate_minor: number }[]; pay_days: number[]; effective_from: string; contract_end: string | null; created_by: string }) => (
-                  <li key={t.id} className="rounded-xl bg-surface-2 p-3"><b>с {date(t.effective_from)}</b> · {PAY_TYPE[t.pay_type]} · оклад {money(t.base_minor)} · выплаты {t.pay_days.join(" и ")}-го{t.piece_rules.length ? ` · сдельно: ${t.piece_rules.map((r) => `${r.kind} ${money(r.rate_minor)}`).join(", ")}` : ""}{t.contract_end ? ` · до ${date(t.contract_end)}` : ""}<div className="text-xs text-muted">внёс {nameOf(people, t.created_by)}</div></li>
+                <ul className="space-y-2 text-sm">{(terms ?? []).map((t: { id: string; pay_type: string; base_minor: number; currency: string; piece_rules: { kind: string; rate_minor: number }[]; pay_days: number[]; effective_from: string; contract_end: string | null; created_by: string }) => (
+                  <li key={t.id} className="rounded-xl bg-surface-2 p-3"><b>с {date(t.effective_from)}</b> · {PAY_TYPE[t.pay_type]} · оклад {money(t.base_minor, t.currency)} · выплаты {t.pay_days.join(" и ")}-го{t.piece_rules.length ? ` · сдельно: ${t.piece_rules.map((r) => `${r.kind} ${money(r.rate_minor)}`).join(", ")}` : ""}{t.contract_end ? ` · до ${date(t.contract_end)}` : ""}<div className="text-xs text-muted">внёс {nameOf(people, t.created_by)}</div></li>
                 ))}</ul>
               )}
               {s.can("payroll.manage") && (
