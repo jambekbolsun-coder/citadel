@@ -5,12 +5,13 @@ import { LoginForm } from "@/components/auth-forms";
 import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Notice } from "@/components/ui";
+import { safeNext } from "@/lib/safe-next";
 
 export const metadata = { title: "Вход" };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
-  const next = typeof sp.next === "string" ? sp.next : "/app";
+  const next = safeNext(sp.next);
   const session = await getSession();
   if (session) redirect(next);
   const supabase = await createClient();

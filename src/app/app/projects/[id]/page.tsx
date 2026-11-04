@@ -65,7 +65,7 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
       {tab === "overview" && <Overview p={p} contract={contract} people={people} members={(members ?? []) as { user_id: string; role: string }[]} canManage={canManage} canOverride={s.can("projects.launch_override")} />}
       {tab === "plan" && <PlanTab projectId={id} period={period} periods={periods} canManage={canManage || s.can("content.plan")} contract={contract} />}
       {tab === "content" && <ContentTab projectId={id} period={period} people={people} canManage={canManage || s.can("content.manage")} />}
-      {tab === "stories" && <StoriesTab projectId={id} period={period} people={people} />}
+      {tab === "stories" && <StoriesTab projectId={id} period={period} people={people} canManage={canManage || s.can("content.manage")} />}
       {tab === "shoots" && <ShootsTab projectId={id} />}
       {tab === "finance" && <FinanceTab projectId={id} periods={periods} canConfirm={s.can("payments.confirm")} canCreate={s.can("payments.create")} canInvoice={s.can("finance.manage")} me={s.userId} isOwner={s.isOwner} />}
       {tab === "checks" && <ChecksTab projectId={id} people={people} />}
@@ -319,7 +319,7 @@ async function ContentTab({ projectId, period, people, canManage }: { projectId:
 }
 
 /* ───────────── Сторис ───────────── */
-async function StoriesTab({ projectId, period, people }: { projectId: string; period?: Period; people: Awaited<ReturnType<typeof activePeople>> }) {
+async function StoriesTab({ projectId, period, people, canManage }: { projectId: string; period?: Period; people: Awaited<ReturnType<typeof activePeople>>; canManage: boolean }) {
   if (!period) return <Empty title="Нет периода" />;
   const supabase = await createClient();
   const { data } = await supabase.from("story_daily_plans").select("*").eq("period_id", period.id).order("day");
@@ -351,9 +351,9 @@ async function StoriesTab({ projectId, period, people }: { projectId: string; pe
                         <span>{r.planned}</span>
                         <input name="actual" type="number" min={0} defaultValue={r.actual} className="input" aria-label="Факт" />
                         <span className="text-xs"><Badge tone={r.actual >= r.planned ? "good" : r.actual > 0 ? "warn" : r.day < today ? "bad" : "neutral"}>{st}</Badge>{r.confirmed_at && <div className="mt-1 text-muted">✓ {nameOf(people, r.confirmed_by)}</div>}</span>
-                        <PeopleSelect name="assignee_id" people={people} defaultValue={r.assignee_id} />
+                        {canManage ? <><input type="hidden" name="can_manage" value="1" /><PeopleSelect name="assignee_id" people={people} defaultValue={r.assignee_id} /></> : <span className="text-sm">{nameOf(people, r.assignee_id)}</span>}
                         <input name="reason" defaultValue={r.shortfall_reason ?? ""} placeholder="Причина" className="input" />
-                        <span className="flex items-center gap-2 text-xs"><label className="flex items-center gap-1"><input type="checkbox" name="confirm" defaultChecked={!!r.confirmed_at} /> подтв.</label><Submit variant="secondary" className="min-h-[34px] px-3 text-xs">OK</Submit></span>
+                        <span className="flex items-center gap-2 text-xs">{canManage && <label className="flex items-center gap-1"><input type="checkbox" name="confirm" defaultChecked={!!r.confirmed_at} /> подтв.</label>}<Submit variant="secondary" className="min-h-[34px] px-3 text-xs">OK</Submit></span>
                       </ActionForm>
                     </td>
                   </tr>

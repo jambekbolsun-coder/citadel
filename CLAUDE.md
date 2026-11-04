@@ -12,6 +12,7 @@
 ## Принципы (не нарушать)
 - Права проверяются в БД (RLS + security definer RPC). UI только скрывает кнопки.
 - Статусы материалов/задач/проектов/съёмок меняются только RPC-функциями (`content_transition`, `task_transition`, `project_set_status`, `launch_project`, `shoot_complete`, `shoot_cancel`, `shoot_reschedule`); прямой UPDATE статуса блокируется триггерами (`content_guard`, `projects_guard`, `tasks_guard`, `shoots_guard`, миграция 0024).
+- `profiles` читается только списком колонок (`PROFILE_COLUMNS` в `src/lib/auth.ts`): `birth_date` закрыта правами колонок (0026). Новая колонка profiles — добавить в grant её миграции и в `PROFILE_COLUMNS`; `select("*")` по profiles не использовать.
 - Деньги — `bigint` в тыйынах (`*_minor`), парсинг через `parseMoney`. Никаких float.
 - Подтверждённые платежи/расходы/начисления не редактируются: только сторно/корректировки.
 - Время в БД — `timestamptz` UTC; в UI — Asia/Bishkek (`src/lib/format.ts`).

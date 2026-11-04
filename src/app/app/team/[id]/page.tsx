@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireActive } from "@/lib/auth";
+import { PROFILE_COLUMNS, requireActive, type Profile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, Badge, Card, Field, LoadError, Notice, PageHeader } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/action-form";
@@ -19,7 +19,8 @@ export default async function Employee({ params }: PageProps<"/app/team/[id]">) 
   if (!UUID.test(id)) notFound();
   // У profiles и departments две связи (отдел сотрудника и руководитель отдела) — указываем внешний ключ явно,
   // иначе PostgREST отвечает PGRST201, а страница показывала ложный 404.
-  const { data: p, error } = await supabase.from("profiles").select("*, departments!profiles_department_id_fkey(name)").eq("id", id).maybeSingle();
+  const { data: pData, error } = await supabase.from("profiles").select(`${PROFILE_COLUMNS}, departments!profiles_department_id_fkey(name)` as string).eq("id", id).maybeSingle();
+  const p = pData as unknown as (Profile & { start_date: string | null; departments: { name: string } | null }) | null;
   if (error) {
     console.error("team/[id]: profile load failed", error.code);
     return <><PageHeader back="/app/team" title="Сотрудник" /><LoadError retry={`/app/team/${id}`} back="/app/team" backLabel="К сотрудникам" /></>;

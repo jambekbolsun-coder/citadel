@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/safe-next";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
   const typeRaw = url.searchParams.get("type");
   const type = OTP_TYPES.includes(typeRaw as EmailOtpType) ? (typeRaw as EmailOtpType) : null;
   const nextRaw = url.searchParams.get("next") ?? "/app";
-  const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/app";
+  const next = safeNext(nextRaw);
   const isRecovery = type === "recovery" || next.startsWith("/auth/update-password");
   const to = (path: string) => NextResponse.redirect(new URL(path, url.origin));
 

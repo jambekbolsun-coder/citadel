@@ -9,6 +9,8 @@ export async function submitLead(_prev: ActionState, fd: FormData): Promise<Acti
   try {
     const h = await headers();
     const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "unknown";
+    // соль задана в Vercel (production/preview); без неё заявки работают, но адреса хэшируются предсказуемо — пишем предупреждение
+    if (!process.env.LEAD_IP_SALT) console.warn("LEAD_IP_SALT не задан: хэш IP в заявках использует запасную соль");
     const ipHash = createHash("sha256").update(`${process.env.LEAD_IP_SALT ?? "citadel"}:${ip}`).digest("hex");
     let utm: Record<string, string> = {};
     try {

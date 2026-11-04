@@ -39,8 +39,9 @@ export const saveProfile = action(async (fd) => {
         ...(fd.has("address_form") ? {
           greet_name: opt(fd, "greet_name")?.slice(0, 40) ?? null,
           address_form: ["he", "she"].includes(str(fd, "address_form")) ? str(fd, "address_form") : "none",
-          birth_date: /^\d{4}-\d{2}-\d{2}$/.test(str(fd, "birth_date")) ? str(fd, "birth_date") : null,
         } : {}),
+        // поле даты не приходит, если её не удалось загрузить, — тогда дата не трогается
+        ...(fd.has("birth_date") ? { birth_date: /^\d{4}-\d{2}-\d{2}$/.test(str(fd, "birth_date")) ? str(fd, "birth_date") : null } : {}),
         ...(avatar ? { avatar_url: avatar } : {}),
       })
       .eq("id", u.user!.id),

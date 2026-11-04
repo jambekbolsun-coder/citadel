@@ -53,3 +53,7 @@
 
 ## 0025 — тема в профиле
 - `profiles.theme`: ограничение `profiles_theme_check` — `system | light | dark | pink | violet | neon | sun` (совпадает с `src/lib/themes.ts`). Сотрудник меняет только свою тему (политика `prof_update_self`).
+
+## 0026 — утечки и мелкие лазейки
+- Часть А: `my_birth_date()` (своя дата, definer); `my_mood` берёт день рождения через неё; триггеры `story_guard` (план, исполнитель, подтверждение сторис — только руководитель проекта / content.manage) и `leads_guard` (стадия, причина отказа, клиент, служебные отметки — только функциями); политики `com_insert` (видимый проект + объект этого проекта: content / shoot / project) и `att_insert` (видимый проект); `mail_quota_note` принимает отметку только при реальном письме в auth.users.
+- Часть Б (после выкладки 0.9.1): SELECT на `profiles` для anon/authenticated — списком колонок без `birth_date`; SELECT на `site_blocks` для anon — без `draft` и `updated_by`.

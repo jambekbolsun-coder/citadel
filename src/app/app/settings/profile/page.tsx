@@ -1,4 +1,5 @@
 import { requireActive } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { Avatar, Field } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/action-form";
 import { SettingsPage } from "@/components/settings-list";
@@ -9,6 +10,9 @@ export const metadata = { title: "Профиль" };
 export default async function ProfileSettings() {
   const s = await requireActive();
   const p = s.profile!;
+  // дата рождения закрыта для коллег (0026): свою дату отдаёт функция my_birth_date()
+  const supabase = await createClient();
+  const { data: birth, error: birthErr } = await supabase.rpc("my_birth_date");
   return (
     <SettingsPage title="Редактировать профиль" subtitle="Фото, имя и контакты видят коллеги. Должность и права меняет руководитель.">
       <ActionForm action={saveProfile} className="space-y-4">
@@ -33,7 +37,7 @@ export default async function ProfileSettings() {
                 <option value="she">Она — «умница»</option>
               </select>
             </Field>
-            <Field label="День рождения" hint="Необязательно — илбирс поздравит"><input name="birth_date" type="date" defaultValue={(p as { birth_date?: string | null }).birth_date ?? ""} className="input" /></Field>
+            <Field label="День рождения" hint="Необязательно — илбирс поздравит">{birthErr ? <input type="date" disabled className="input opacity-70" title="Не удалось загрузить дату — она не изменится" /> : <input name="birth_date" type="date" defaultValue={(birth as string | null) ?? ""} className="input" />}</Field>
           </div>
         </fieldset>
         <Field label="Должность" hint="Меняет руководитель"><input value={p.job_title ?? ""} disabled className="input opacity-70" /></Field>

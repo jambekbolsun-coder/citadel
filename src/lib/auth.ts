@@ -3,6 +3,13 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * Колонки профиля, доступные приложению. Дата рождения закрыта правами колонок (миграция 0026) —
+ * своя дата читается функцией my_birth_date(). Новую колонку profiles добавить и сюда, и в grant миграции.
+ */
+export const PROFILE_COLUMNS =
+  "id,full_name,email,phone,avatar_url,about,job_title,department_id,manager_id,responsibilities,work_schedule,start_date,status,theme,locale,created_at,updated_at,greet_name,address_form";
+
 export type Profile = {
   id: string;
   full_name: string;
@@ -34,7 +41,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return null;
   const [{ data: profile }, { data: roles }, { data: perms }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle(),
+    supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", auth.user.id).maybeSingle(),
     supabase.from("user_roles").select("role_code").eq("user_id", auth.user.id),
     supabase.rpc("my_permissions"),
   ]);

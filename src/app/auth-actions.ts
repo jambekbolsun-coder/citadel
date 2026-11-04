@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { safeNext } from "@/lib/safe-next";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { action, check, str, type ActionState } from "@/lib/actions";
@@ -13,9 +14,6 @@ async function origin() {
   return process.env.NEXT_PUBLIC_SITE_URL && !host ? process.env.NEXT_PUBLIC_SITE_URL : `${proto}://${host}`;
 }
 
-function safeNext(n: string) {
-  return n.startsWith("/") && !n.startsWith("//") ? n : "/app";
-}
 
 // ───── лимит встроенной почты Supabase (2 письма в час): отметки отправок и состояние для таймера ─────
 type MailKind = "signup" | "resend" | "recovery" | "limit";

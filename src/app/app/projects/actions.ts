@@ -182,9 +182,12 @@ export const saveStoryDay = action(async (fd) => {
       .update({
         actual,
         shortfall_reason: reason,
-        assignee_id: opt(fd, "assignee_id"),
-        confirmed_by: fd.get("confirm") === "on" ? u.user!.id : null,
-        confirmed_at: fd.get("confirm") === "on" ? new Date().toISOString() : null,
+        // исполнителя и подтверждение меняет руководитель (форма руководителя присылает can_manage; проверяет БД, 0026)
+        ...(fd.has("can_manage") ? {
+          assignee_id: opt(fd, "assignee_id"),
+          confirmed_by: fd.get("confirm") === "on" ? u.user!.id : null,
+          confirmed_at: fd.get("confirm") === "on" ? new Date().toISOString() : null,
+        } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", str(fd, "story_id")),

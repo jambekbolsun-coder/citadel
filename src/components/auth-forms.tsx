@@ -222,13 +222,21 @@ export function LoginForm({ next }: { next: string }) {
 /** Запрос ссылки для смены пароля (поле email не очищается при ошибке). */
 export function ResetRequestForm({ quota: initialQuota = null }: { quota?: EmailQuota | null }) {
   const quota = useEmailQuota(initialQuota);
+  // таймер — подсказка, а не замок: если лимит на самом деле свободен, можно попробовать сразу
+  const [force, setForce] = useState(false);
+  const blocked = quota.busy && !force;
   return (
     <KeepForm action={requestReset} className="space-y-4" onDone={() => void quota.refresh()}>
       {(pending) => (
         <>
           <QuotaNotice left={quota.left} q={quota.q} action="отправку письма" />
           <label className="block"><span className="label">Email</span><input name="email" type="email" required inputMode="email" autoComplete="email" className="input" /></label>
-          <button type="submit" disabled={pending || quota.busy} className={btn("primary", "w-full")}>{pending ? "Отправляем…" : quota.busy ? `Можно через ${mmss(quota.left)}` : "Отправить ссылку"}</button>
+          <button type="submit" disabled={pending || blocked} className={btn("primary", "w-full")}>{pending ? "Отправляем…" : blocked ? `Можно через ${mmss(quota.left)}` : "Отправить ссылку"}</button>
+          {blocked && (
+            <button type="button" onClick={() => setForce(true)} className="w-full text-center text-xs text-muted underline">
+              Всё равно отправить сейчас
+            </button>
+          )}
         </>
       )}
     </KeepForm>
