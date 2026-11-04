@@ -111,9 +111,8 @@ export const completeShoot = action(async (fd) => {
   const supabase = await createClient();
   const src = str(fd, "sources_url");
   if (!src) throw new Error("Прикрепите ссылку на исходники");
-  const { data: u } = await supabase.auth.getUser();
-  check(await supabase.from("shoots").update({ status: "done", actual_start: localInputToIso(fd.get("actual_start")), actual_end: localInputToIso(fd.get("actual_end")), sources_url: src }).eq("id", str(fd, "id")));
-  await supabase.from("comments").insert({ entity_type: "shoot", entity_id: str(fd, "id"), author_id: u.user!.id, body: `Съёмка проведена. Исходники: ${src}` });
+  // статус, факт и комментарий пишет функция БД shoot_complete (0024): права мобилографа/руководителя проверяются там
+  check(await supabase.rpc("shoot_complete", { p_shoot: str(fd, "id"), p_actual_start: localInputToIso(fd.get("actual_start")), p_actual_end: localInputToIso(fd.get("actual_end")), p_sources_url: src }));
   rs(str(fd, "id"));
   return "Съёмка отмечена проведённой";
 });
@@ -122,7 +121,7 @@ export const cancelShoot = action(async (fd) => {
   const supabase = await createClient();
   const reason = str(fd, "reason");
   if (!reason) throw new Error("Укажите причину отмены");
-  check(await supabase.from("shoots").update({ status: "cancelled", cancel_reason: reason }).eq("id", str(fd, "id")));
+  check(await supabase.rpc("shoot_cancel", { p_shoot: str(fd, "id"), p_reason: reason }));
   rs(str(fd, "id"));
   return "Съёмка отменена";
 });

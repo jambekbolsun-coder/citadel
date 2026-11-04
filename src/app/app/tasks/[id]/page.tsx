@@ -30,6 +30,9 @@ export default async function TaskPage({ params }: PageProps<"/app/tasks/[id]">)
   const [people, { data: hist }] = await Promise.all([activePeople(), supabase.from("task_history").select("*").eq("task_id", id).order("created_at", { ascending: false })]);
   const canManage = s.can("tasks.manage") || t.created_by === s.userId;
   const over = !["done", "cancelled"].includes(t.status) ? overdueText(t.due_at) : null;
+  // закрытую задачу возвращает автор, руководитель или проверяющий (task_transition, 0024); руководитель проекта — проверит БД
+  const canReopen = canManage || t.reviewer_id === s.userId;
+  const nextList = t.status === "done" && !canReopen ? [] : (NEXT[t.status] ?? []);
   return (
     <>
       <PageHeader back="/app/tasks" title={t.title} subtitle={t.projects ? <Link className="hover:underline" href={`/app/projects/${t.projects.id}`}>{t.projects.name}</Link> : "Без проекта"}
@@ -59,11 +62,11 @@ export default async function TaskPage({ params }: PageProps<"/app/tasks/[id]">)
         </div>
         <div className="space-y-4">
           {t.series_id && <SeriesCard entity="task" id={id} seriesId={t.series_id} from={t.due_at} canManage={canManage} />}
-          {(NEXT[t.status] ?? []).length > 0 && (
+          {nextList.length > 0 && (
             <Card title="Изменить статус">
               <ActionForm action={transitionTask} className="space-y-2">
                 <input type="hidden" name="id" value={id} />
-                <select name="to" className="input">{NEXT[t.status].map((n) => <option key={n} value={n}>{TASK_STATUS[n]}</option>)}</select>
+                <select name="to" className="input">{nextList.map((n) => <option key={n} value={n}>{TASK_STATUS[n]}</option>)}</select>
                 <textarea name="result" placeholder="Результат (ссылка/описание) — обязателен для проверки и завершения" className="input" />
                 <input name="note" placeholder="Причина (для доработки, блокировки, отмены)" className="input" />
                 <Submit className="w-full">Применить</Submit>

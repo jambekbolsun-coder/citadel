@@ -6,7 +6,8 @@ import { Badge, Card, Field, Notice, PageHeader } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/action-form";
 import { PeopleSelect } from "@/components/people-select";
 import { activePeople, nameOf } from "@/lib/data";
-import { CONTENT_KIND, CONTENT_NEXT, CONTENT_STATUS, PLATFORMS } from "@/lib/labels";
+import { CONTENT_KIND, CONTENT_STATUS, PLATFORMS } from "@/lib/labels";
+import { contentNextOptions, type ContentHistoryRow } from "@/lib/content-flow";
 import { dateTime, isoToLocalInput, overdueText } from "@/lib/format";
 import { addComment } from "@/app/app/projects/actions";
 import { addPlacement, assignContent, checkPlacement, saveContentDetails, transitionContent } from "../actions";
@@ -27,7 +28,7 @@ export default async function ContentPage({ params }: PageProps<"/app/content/[i
   const isMgr = s.can("projects.manage") || s.can("content.manage") || proj.admin_id === s.userId || proj.manager_id === s.userId;
   const isExec = c.assignee_id === s.userId;
   const isRev = c.reviewer_id === s.userId || isMgr;
-  const next = (CONTENT_NEXT[c.status] ?? []).filter(() => (c.status === "review" ? isRev : true)).filter((n) => n !== "published" || proj.requires_publication);
+  const next = contentNextOptions(c.status, (hist ?? []) as ContentHistoryRow[], isMgr).filter(() => (c.status === "review" ? isRev : true)).filter((n) => n !== "published" || proj.requires_publication);
   const dueOver = !["done", "published", "cancelled"].includes(c.status) ? overdueText(c.status === "review" ? c.review_due : c.prep_due) : null;
   const placements = (pls ?? []) as { id: string; platform: string; url: string; published_at: string; checked_at: string | null; checked_by: string | null; created_by: string }[];
 

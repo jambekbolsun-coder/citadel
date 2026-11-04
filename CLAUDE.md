@@ -11,7 +11,7 @@
 
 ## Принципы (не нарушать)
 - Права проверяются в БД (RLS + security definer RPC). UI только скрывает кнопки.
-- Статусы материалов/задач/проектов меняются только RPC-функциями (`content_transition`, `task_transition`, `project_set_status`, `launch_project`); прямой UPDATE статуса блокируется триггером.
+- Статусы материалов/задач/проектов/съёмок меняются только RPC-функциями (`content_transition`, `task_transition`, `project_set_status`, `launch_project`, `shoot_complete`, `shoot_cancel`, `shoot_reschedule`); прямой UPDATE статуса блокируется триггерами (`content_guard`, `projects_guard`, `tasks_guard`, `shoots_guard`, миграция 0024).
 - Деньги — `bigint` в тыйынах (`*_minor`), парсинг через `parseMoney`. Никаких float.
 - Подтверждённые платежи/расходы/начисления не редактируются: только сторно/корректировки.
 - Время в БД — `timestamptz` UTC; в UI — Asia/Bishkek (`src/lib/format.ts`).

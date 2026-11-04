@@ -39,3 +39,14 @@
 ## 0023 — значки и дни рождения (только функции)
 - `my_achievements()` → jsonb: счётчики значков (`tasks_done` без задач «себе», `videos`, `content`, `story_days`, `active_days`, `contest_top3`, `contest_wins`), `streak_days` / `best_streak` (рабочие дни между «окнами просрочки» — от срока до сдачи; рабочие дни из `app_settings.work_days`, по умолчанию пн–пт), `overdue_now`, `month` — итоги прошлого месяца (Бишкек).
 - `birthdays_today()` → id, full_name, greet_name, avatar_url активных сотрудников с днём рождения сегодня (security definer, только для активных).
+
+## 0024 — сторожа статусов и деньги проекта (только функции и триггеры)
+- Триггеры `projects_guard`, `tasks_guard`, `shoots_guard`: для роли `authenticated` запрещено прямое изменение статуса и служебных отметок (проекты: status, launched_at/by, launch_override_reason; задачи: status, completed_at; съёмки: status, время, проект, период, серия, факт, исходники, причина отмены). Вставка — только в начальном статусе (draft / todo / planned).
+- `content_guard` дополнительно защищает reviewer_id, submitted_at, review_due, prep_due, publish_due, project_id, period_id, plan_item_id.
+- `content_transition`: исполнитель с паузы / блокировки — только в статус до паузы (по `content_history`).
+- `task_transition`: закрытую (done / cancelled) задачу возвращает автор, руководитель или проверяющий; повтор того же статуса — ошибка.
+- `project_paid_status(project)` → jsonb: суммы в валюте договора (`currency`, `price`, `paid`, `pending`, `invoiced`, `fully_paid`, `masked=false`) для finance.view / prices.view / payments.create / управляющих проектом; остальным видящим проект — `{currency, fully_paid, has_pending, masked=true}`.
+- `launch_project`: оплата в валюте договора, пустые суммы считаются нулём.
+- Новые RPC: `shoot_complete(shoot, actual_start, actual_end, sources_url)`, `shoot_cancel(shoot, reason)`.
+- `access_rows_no_update`: UPDATE строк user_roles, user_permissions, role_permissions запрещён.
+- Политика `shoots_update`: `with check` теперь равна условию чтения (было `true`).

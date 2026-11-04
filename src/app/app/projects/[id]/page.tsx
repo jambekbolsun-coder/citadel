@@ -17,6 +17,7 @@ const TABS = [
   ["finance", "Финансы"], ["checks", "Проверки"], ["access", "Доступы"], ["history", "История"],
 ] as const;
 
+type PaidStatus = { currency?: string; price?: number; paid?: number; pending?: number; invoiced?: number; fully_paid?: boolean; has_pending?: boolean; masked?: boolean };
 type Period = { id: string; seq: number; label: string; starts_on: string; ends_on: string; status: string; plan_status: string };
 type Progress_ = { period_id: string; kind: string; planned: number; in_work: number; in_post: number; prepared: number; published: number; verified: number; left_to_prepare: number; left_to_publish: number; overflow: number; overdue: number };
 
@@ -78,10 +79,12 @@ export default async function ProjectPage({ params, searchParams }: PageProps<"/
 async function Overview({ p, contract, people, members, canManage, canOverride }: { p: Record<string, any>; contract: Record<string, any> | null; people: Awaited<ReturnType<typeof activePeople>>; members: { user_id: string; role: string }[]; canManage: boolean; canOverride: boolean }) {
   const supabase = await createClient();
   const { data: paid } = await supabase.rpc("project_paid_status", { p_project: p.id });
-  const ps = (paid ?? {}) as { price?: number; paid?: number; pending?: number; invoiced?: number };
+  // project_paid_status (0024): суммы — только финансам и управляющим проектом, остальным masked + fully_paid
+  const ps = (paid ?? {}) as PaidStatus;
   const h = (p.handoff ?? {}) as Record<string, boolean>;
   const price = ps.price ?? contract?.price_minor ?? 0;
-  const fullyPaid = price > 0 && (ps.paid ?? 0) >= price;
+  const fullyPaid = ps.fully_paid ?? (price > 0 && (ps.paid ?? 0) >= price);
+  const cur = ps.currency ?? contract?.currency ?? "KGS";
   const next = PROJECT_TRANSITIONS[p.status] ?? [];
   const comp = (contract?.composition ?? {}) as Record<string, number>;
   return (
@@ -98,7 +101,11 @@ async function Overview({ p, contract, people, members, canManage, canOverride }
               ))}
               <div className="flex items-center gap-2 text-sm">
                 <span className={fullyPaid ? "text-good" : "text-warn"}>{fullyPaid ? "✓" : "○"}</span>
-                Оплата: {money(ps.paid ?? 0)} из {money(price)} {(ps.pending ?? 0) > 0 && <span className="text-muted">(на подтверждении {money(ps.pending)})</span>}
+                {ps.masked ? (
+                  <>Оплата: {fullyPaid ? "получена полностью" : "ещё не полностью"} {ps.has_pending && <span className="text-muted">(есть платёж на подтверждении)</span>}</>
+                ) : (
+                  <>Оплата: {money(ps.paid ?? 0, cur)} из {money(price, cur)} {(ps.pending ?? 0) > 0 && <span className="text-muted">(на подтверждении {money(ps.pending ?? 0, cur)})</span>}</>
+                )}
               </div>
               {canManage && <Submit variant="secondary">Сохранить чек-лист</Submit>}
             </ActionForm>
@@ -389,16 +396,17 @@ async function FinanceTab({ projectId, periods, canConfirm, canCreate, canInvoic
     activePeople(),
     supabase.rpc("project_paid_status", { p_project: projectId }),
   ]);
-  const ps = (paid ?? {}) as { price?: number; paid?: number; invoiced?: number; pending?: number };
+  const ps = (paid ?? {}) as PaidStatus;
+  const cur = ps.currency ?? "KGS";
   const invoices = (inv ?? []) as { id: string; number: number; title: string; amount_minor: number; paid_minor: number; due_on: string; pay_state: string; status: string }[];
   const payments = (pays ?? []) as { id: string; invoice_id: string | null; kind: string; amount_minor: number; paid_on: string; method: string | null; status: string; created_by: string; confirmed_by: string | null; note: string | null; reject_reason: string | null }[];
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-4">
-        <Stat label="Цена договора (период)" value={money(ps.price ?? 0)} />
-        <Stat label="Выставлено" value={money(ps.invoiced ?? 0)} />
-        <Stat label="Оплачено (подтверждено)" value={money(ps.paid ?? 0)} tone="good" />
-        <Stat label="Остаток по счетам" value={money(Math.max(0, (ps.invoiced ?? 0) - (ps.paid ?? 0)))} tone={(ps.invoiced ?? 0) > (ps.paid ?? 0) ? "warn" : "good"} />
+        <Stat label="Цена договора (период)" value={money(ps.price ?? 0, cur)} />
+        <Stat label="Выставлено" value={money(ps.invoiced ?? 0, cur)} />
+        <Stat label="Оплачено (подтверждено)" value={money(ps.paid ?? 0, cur)} tone="good" />
+        <Stat label="Остаток по счетам" value={money(Math.max(0, (ps.invoiced ?? 0) - (ps.paid ?? 0)), cur)} tone={(ps.invoiced ?? 0) > (ps.paid ?? 0) ? "warn" : "good"} />
       </div>
       <Card title="Счета (график оплат)">
         {invoices.length === 0 ? <p className="text-sm text-muted">Счетов нет.</p> : (
