@@ -22,10 +22,10 @@ export function Podium({ rows, prizes, me }: { rows: Row[]; prizes: Prize[]; me:
         <div key={r.user_id} className={cn("w-full truncate text-sm font-semibold", r.user_id === me && "text-primary")}>{r.full_name}</div>
       ))}
       {by(pl).length > 0 && <div className="text-xs text-muted">{by(pl)[0].score} баллов</div>}
-      <div className={cn("mt-1 flex w-full flex-col items-center justify-start rounded-t-2xl pt-2 font-display text-2xl font-extrabold text-white", h, pl === 1 ? "bg-[#1845d2]" : pl === 2 ? "bg-[#5b7fe6]" : "bg-[#8aa3ee]")}>
+      <div className={cn("mt-1 flex w-full flex-col items-center justify-start rounded-t-2xl pt-2 font-display text-2xl font-extrabold", h, pl === 1 ? "bg-accent text-accent-ink" : "bg-brand text-brand-ink")}>
         <span aria-hidden>{medal(pl)}</span>
         <span className="sr-only">{pl}-е место</span>
-        {prizeText(prizes, pl) && <span className="mt-1 px-1 text-[11px] font-semibold leading-tight text-white/90">{prizeText(prizes, pl)}</span>}
+        {prizeText(prizes, pl) && <span className="mt-1 px-1 text-[11px] font-semibold leading-tight opacity-90">{prizeText(prizes, pl)}</span>}
       </div>
     </div>
   );

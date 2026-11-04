@@ -50,3 +50,6 @@
 - Новые RPC: `shoot_complete(shoot, actual_start, actual_end, sources_url)`, `shoot_cancel(shoot, reason)`.
 - `access_rows_no_update`: UPDATE строк user_roles, user_permissions, role_permissions запрещён.
 - Политика `shoots_update`: `with check` теперь равна условию чтения (было `true`).
+
+## 0025 — тема в профиле
+- `profiles.theme`: ограничение `profiles_theme_check` — `system | light | dark | pink | violet | neon | sun` (совпадает с `src/lib/themes.ts`). Сотрудник меняет только свою тему (политика `prof_update_self`).

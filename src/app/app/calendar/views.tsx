@@ -58,11 +58,11 @@ export function MonthMobile({ days, month, today, byDay, statusLabels }: { days:
                 onClick={() => setSel(d)}
                 aria-pressed={sel === d}
                 aria-label={`${dayTitle(d)}: ${items.length ? `событий ${items.length}` : "нет событий"}`}
-                className={cn("flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-[15px] tabular-nums", !inMonth && "text-muted/60", sel === d ? "bg-brand text-white" : d === today ? "font-bold text-brand" : "")}
+                className={cn("flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-[15px] tabular-nums", !inMonth && "text-muted/60", sel === d ? "bg-brand text-brand-ink" : d === today ? "font-bold text-brand" : "")}
               >
                 {Number(d.slice(8))}
                 <span className="flex h-1.5 gap-0.5" aria-hidden>
-                  {tones.map((t) => <span key={t} className={cn("h-1.5 w-1.5 rounded-full", sel === d ? "bg-white" : TONE[t])} />)}
+                  {tones.map((t) => <span key={t} className={cn("h-1.5 w-1.5 rounded-full", sel === d ? "bg-brand-ink" : TONE[t])} />)}
                 </span>
               </button>
             );

@@ -38,7 +38,6 @@ export default async function ProfileSettings() {
         </fieldset>
         <Field label="Должность" hint="Меняет руководитель"><input value={p.job_title ?? ""} disabled className="input opacity-70" /></Field>
         <Field label="Email" hint="Меняется через владельца"><input value={s.email ?? ""} disabled className="input opacity-70" /></Field>
-        <input type="hidden" name="theme" value={p.theme} />
         <div className="sticky-actions"><Submit className="w-full">Сохранить</Submit></div>
       </ActionForm>
     </SettingsPage>

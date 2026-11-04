@@ -69,8 +69,8 @@ const btnVariants = {
   primary: "bg-primary text-primary-ink hover:brightness-110",
   secondary: "border border-line bg-surface-2 text-ink hover:bg-surface",
   ghost: "text-muted hover:text-ink hover:bg-surface-2",
-  danger: "bg-bad text-white hover:brightness-110",
-  brand: "bg-brand text-white hover:brightness-110",
+  danger: "bg-bad text-bad-ink hover:brightness-110",
+  brand: "bg-brand text-brand-ink hover:brightness-110",
 };
 export type BtnVariant = keyof typeof btnVariants;
 export function btn(v: BtnVariant = "primary", extra?: string) {

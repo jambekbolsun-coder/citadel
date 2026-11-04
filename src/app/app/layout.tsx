@@ -7,6 +7,7 @@ import { PinLock } from "@/components/pin-lock";
 import { WebVitals } from "@/components/web-vitals";
 import { GreetingSplash } from "@/components/greeting-splash";
 import { ActivityPing } from "@/components/activity-ping";
+import { ThemeSync } from "@/components/theme";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
       <PinLock userId={s.userId} />
       <GreetingSplash userId={s.userId} />
       <ActivityPing userId={s.userId} />
+      <ThemeSync theme={s.profile?.theme} />
       <WebVitals />
     </div>
   );

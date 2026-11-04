@@ -210,7 +210,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/app/cal
                   const items = byDay[d] ?? [];
                   return (
                     <DropDay key={d} day={d} className={cn("min-h-[112px] border-t border-l border-line p-1.5 first:border-l-0", !inMonth && "bg-surface-2/40", d === today && "bg-primary/5")}>
-                      <Link href={qs({ view: "day", date: d })} className={cn("mb-1 inline-block rounded-md px-1.5 text-xs font-semibold", d === today ? "bg-brand text-white" : inMonth ? "" : "text-muted")}>{Number(d.slice(8))}</Link>
+                      <Link href={qs({ view: "day", date: d })} className={cn("mb-1 inline-block rounded-md px-1.5 text-xs font-semibold", d === today ? "bg-brand text-brand-ink" : inMonth ? "" : "text-muted")}>{Number(d.slice(8))}</Link>
                       <div className="space-y-0.5">
                         {items.slice(0, 4).map((e) => <DragItem key={e.id} kind={e.kind} id={e.ref} day={e.day} title={e.title} href={e.href} className={cn("block truncate rounded px-1 py-0.5 text-[11px]", CHIP[e.tone])}>{e.time ? e.time + " " : ""}{e.title}</DragItem>)}
                         {items.length > 4 && <Link href={qs({ view: "day", date: d })} className="block px-1 text-[11px] text-muted">+ ещё {items.length - 4}</Link>}

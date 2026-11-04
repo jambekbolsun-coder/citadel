@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope, Montserrat } from "next/font/google";
 import { SwRegister } from "@/components/pwa";
+import { THEME_BOOT_SCRIPT } from "@/lib/themes";
 import "./globals.css";
 
 const ui = Manrope({ variable: "--font-ui", subsets: ["latin", "cyrillic"] });
@@ -32,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('citadel.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`,
+            __html: THEME_BOOT_SCRIPT,
           }}
         />
       </head>

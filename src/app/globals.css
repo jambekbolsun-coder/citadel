@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
-/* SMM KADR — дизайн-токены. Нейтральный спокойный фон, фирменный синий (#1845D2, знак логотипа) — бренд и рабочие действия,
-   бирюзовый (#4de5ff, акцент презентации) — только на публичном сайте. */
-:root {
+/* SMM KADR — дизайн-токены и цветные темы (docs/THEMES_PLAN.md).
+   Тема ставится атрибутом data-theme на <html> (а в превью — на любом элементе). Без атрибута — системная: светлая или тёмная.
+   Два вида цвета: --primary/--brand — кнопки, ссылки, текст-акценты (всегда читаются на фоне);
+   --accent — яркое украшение («+», отметки), текст на нём — только --accent-ink.
+   Текст на сплошной заливке: --primary-ink, --brand-ink, --bad-ink. Контраст всех пар проверяет src/lib/themes.test.ts.
+   Публичный сайт использует свои переменные (--k-*) и от темы не зависит. */
+:root, [data-theme="light"] {
   --bg: #f3f5f8;
   --surface: #ffffff;
   --surface-2: #eef1f5;
@@ -12,12 +16,16 @@
   --primary: #1845d2;
   --primary-ink: #ffffff;
   --brand: #1845d2;
+  --brand-ink: #ffffff;
   --brand-soft: #e3ebfd;
+  --accent: #1845d2;
+  --accent-ink: #ffffff;
   --good: #15803d;
   --good-soft: #dcfce7;
   --warn: #b45309;
   --warn-soft: #fef3c7;
   --bad: #b91c1c;
+  --bad-ink: #ffffff;
   --bad-soft: #fee2e2;
   --info: #0369a1;
   --info-soft: #e0f2fe;
@@ -26,7 +34,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme]) {
     --bg: #0e1422;
     --surface: #161d2e;
     --surface-2: #1e2739;
@@ -36,12 +44,16 @@
     --primary: #6f95ff;
     --primary-ink: #0b1220;
     --brand: #5b85ff;
+    --brand-ink: #0b1220;
     --brand-soft: #172447;
+    --accent: #5b85ff;
+    --accent-ink: #0b1220;
     --good: #4ade80;
     --good-soft: #13301f;
     --warn: #fbbf24;
     --warn-soft: #36290c;
     --bad: #f87171;
+    --bad-ink: #1f0a0a;
     --bad-soft: #3a1518;
     --info: #7dd3fc;
     --info-soft: #0f2a3a;
@@ -49,7 +61,7 @@
     color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
+[data-theme="dark"] {
   --bg: #0e1422;
   --surface: #161d2e;
   --surface-2: #1e2739;
@@ -59,17 +71,133 @@
   --primary: #6f95ff;
   --primary-ink: #0b1220;
   --brand: #5b85ff;
+  --brand-ink: #0b1220;
   --brand-soft: #172447;
+  --accent: #5b85ff;
+  --accent-ink: #0b1220;
   --good: #4ade80;
   --good-soft: #13301f;
   --warn: #fbbf24;
   --warn-soft: #36290c;
   --bad: #f87171;
+  --bad-ink: #1f0a0a;
   --bad-soft: #3a1518;
   --info: #7dd3fc;
   --info-soft: #0f2a3a;
   --ring: #6f95ff55;
   color-scheme: dark;
+}
+
+/* Розовый — светлая: нежно-розовый фон, малиновые кнопки, ярко-розовый «+» */
+[data-theme="pink"] {
+  --bg: #fdeef6;
+  --surface: #ffffff;
+  --surface-2: #fbe1ef;
+  --border: #f3c3dc;
+  --text: #2b0a1d;
+  --muted: #7d3f60;
+  --primary: #c2187a;
+  --primary-ink: #ffffff;
+  --brand: #be185d;
+  --brand-ink: #ffffff;
+  --brand-soft: #fce4f1;
+  --accent: #ff4fa3;
+  --accent-ink: #2b0a1d;
+  --good: #15803d;
+  --good-soft: #dcfce7;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --bad: #c81e1e;
+  --bad-ink: #ffffff;
+  --bad-soft: #fee2e2;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
+  --ring: #c2187a55;
+  color-scheme: light;
+}
+
+/* Фиолетовая ночь — тёмная: глубокий фиолетовый фон, сиреневые акценты */
+[data-theme="violet"] {
+  --bg: #130b22;
+  --surface: #1d1332;
+  --surface-2: #291c45;
+  --border: #3e2b66;
+  --text: #f4efff;
+  --muted: #b6a6d9;
+  --primary: #b794ff;
+  --primary-ink: #1a0e30;
+  --brand: #c4a6ff;
+  --brand-ink: #1a0e30;
+  --brand-soft: #2f1f55;
+  --accent: #c084fc;
+  --accent-ink: #1a0e30;
+  --good: #4ade80;
+  --good-soft: #123020;
+  --warn: #fbbf24;
+  --warn-soft: #3a2a0a;
+  --bad: #fb7185;
+  --bad-ink: #2a0714;
+  --bad-soft: #3d1424;
+  --info: #7dd3fc;
+  --info-soft: #0f2a3a;
+  --ring: #b794ff55;
+  color-scheme: dark;
+}
+
+/* Неон — тёмная яркая: почти чёрный фон, бирюзовые кнопки, салатовый «+» */
+[data-theme="neon"] {
+  --bg: #07070c;
+  --surface: #121219;
+  --surface-2: #1b1b26;
+  --border: #2b2b3c;
+  --text: #f6f6ff;
+  --muted: #a3a3ba;
+  --primary: #00e5ff;
+  --primary-ink: #03121a;
+  --brand: #00e5ff;
+  --brand-ink: #03121a;
+  --brand-soft: #062a33;
+  --accent: #d4ff3a;
+  --accent-ink: #141a00;
+  --good: #a3ff3a;
+  --good-soft: #1c2e0a;
+  --warn: #ffb020;
+  --warn-soft: #33240a;
+  --bad: #ff4d6d;
+  --bad-ink: #1f0309;
+  --bad-soft: #3a0f1a;
+  --info: #9db4ff;
+  --info-soft: #161d3a;
+  --ring: #00e5ff55;
+  color-scheme: dark;
+}
+
+/* Солнечный — светлая яркая: кремовый фон, жёлтый «+», кнопки и ссылки коричнево-золотые */
+[data-theme="sun"] {
+  --bg: #fff8e1;
+  --surface: #ffffff;
+  --surface-2: #fff1c2;
+  --border: #f2dc94;
+  --text: #1f1700;
+  --muted: #6b5a20;
+  --primary: #8a5a00;
+  --primary-ink: #ffffff;
+  --brand: #8a5a00;
+  --brand-ink: #ffffff;
+  --brand-soft: #fff1c2;
+  --accent: #ffc928;
+  --accent-ink: #1f1700;
+  --good: #15803d;
+  --good-soft: #dcfce7;
+  --warn: #b45309;
+  --warn-soft: #fff4e0;
+  --bad: #b91c1c;
+  --bad-ink: #ffffff;
+  --bad-soft: #fee2e2;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
+  --ring: #8a5a0055;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -82,12 +210,16 @@
   --color-primary: var(--primary);
   --color-primary-ink: var(--primary-ink);
   --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-good: var(--good);
   --color-good-soft: var(--good-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --color-bad: var(--bad);
+  --color-bad-ink: var(--bad-ink);
   --color-bad-soft: var(--bad-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);

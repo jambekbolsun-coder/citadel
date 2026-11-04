@@ -47,21 +47,6 @@ export function PinSetup({ userId, action, removeAction, devices }: { userId: st
   );
 }
 
-export function ThemeSwitch() {
-  const [t, setT] = useState("system");
-  useEffect(() => {
-    try { setT(localStorage.getItem("citadel.theme") ?? "system"); } catch {}
-  }, []);
-  const apply = (v: string) => {
-    setT(v);
-    try { if (v === "system") localStorage.removeItem("citadel.theme"); else localStorage.setItem("citadel.theme", v); } catch {}
-    if (v === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
-  };
-  return (
-    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Тема">{[["system", "Системная"], ["light", "Светлая"], ["dark", "Тёмная"]].map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={t === k} onClick={() => apply(k)} className={btn(t === k ? "primary" : "secondary", "px-2")}>{l}</button>)}</div>
-  );
-}
-
 function keyToBytes(b64url: string) {
   const b64 = (b64url + "=".repeat((4 - (b64url.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(b64);

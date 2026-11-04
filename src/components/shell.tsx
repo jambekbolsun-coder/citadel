@@ -143,7 +143,7 @@ function BellButton({ userId, initialUnread }: { userId: string; initialUnread: 
     <>
       <Link href="/app/notifications" className="tap relative shrink-0" aria-label={unread ? `Уведомления: ${unread} непрочитанных` : "Уведомления"}>
         <Bell size={22} />
-        {unread > 0 && <span className="absolute right-1.5 top-1.5 min-w-[18px] rounded-full bg-brand px-1 text-center text-[10px] font-bold leading-[18px] text-white ring-2 ring-bg">{unread > 99 ? "99+" : unread}</span>}
+        {unread > 0 && <span className="absolute right-1.5 top-1.5 min-w-[18px] rounded-full bg-brand px-1 text-center text-[10px] font-bold leading-[18px] text-brand-ink ring-2 ring-bg">{unread > 99 ? "99+" : unread}</span>}
       </Link>
       {toast && (
         <Link href="/app/notifications" onClick={() => setToast(null)} className="fixed inset-x-4 top-[calc(64px+env(safe-area-inset-top))] z-[60] mx-auto max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-2xl" role="status">
@@ -172,7 +172,7 @@ export function BottomNav({ tab }: { tab: { href: string; label: string; icon: s
           if (!i)
             return (
               <div key="plus" className="flex items-start justify-center">
-                <button type="button" onClick={() => openPlus()} aria-haspopup="dialog" aria-controls="plus-sheet" aria-label="Создать или сдать работу" className="plus-btn -mt-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/30 ring-4 ring-bg active:scale-95">
+                <button type="button" onClick={() => openPlus()} aria-haspopup="dialog" aria-controls="plus-sheet" aria-label="Создать или сдать работу" className="plus-btn -mt-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-lg shadow-accent/30 ring-4 ring-bg active:scale-95">
                   <Plus size={28} strokeWidth={2.4} />
                 </button>
               </div>
@@ -245,7 +245,7 @@ export function PlusSheet({ actions }: { actions: PlusAction[] }) {
               const Icon = iconOf(a.icon);
               const body = (
                 <>
-                  <span className={cn("row-icon", a.key === "submit" && "bg-brand! text-white!")}><Icon size={19} /></span>
+                  <span className={cn("row-icon", a.key === "submit" && "bg-accent! text-accent-ink!")}><Icon size={19} /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{a.label}</span>
                     <span className="block truncate text-[13px] text-muted">{a.hint}</span>

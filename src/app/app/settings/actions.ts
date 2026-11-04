@@ -6,6 +6,18 @@ import { action, check, opt, str } from "@/lib/actions";
 import { getSession } from "@/lib/auth";
 import { availableWorkTabs, WORK_TAB_COOKIE } from "@/lib/nav";
 import { EMOTIONS } from "@/lib/mascot";
+import { isTheme } from "@/lib/themes";
+
+/** Тема сохраняется в профиле — одна на всех устройствах (docs/THEMES_PLAN.md). Список проверяет и БД (0025). */
+export async function saveTheme(theme: string): Promise<{ ok: boolean; error?: string }> {
+  if (!isTheme(theme)) return { ok: false, error: "Неизвестная тема" };
+  const supabase = await createClient();
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return { ok: false, error: "Войдите заново" };
+  const { error } = await supabase.from("profiles").update({ theme }).eq("id", u.user.id);
+  if (error) return { ok: false, error: "Тема применена на этом устройстве, но не сохранилась в профиле" };
+  return { ok: true };
+}
 
 export const saveProfile = action(async (fd) => {
   const supabase = await createClient();
@@ -23,7 +35,7 @@ export const saveProfile = action(async (fd) => {
     await supabase
       .from("profiles")
       .update({
-        full_name: str(fd, "full_name"), phone: opt(fd, "phone"), about: opt(fd, "about"), theme: str(fd, "theme") || "system",
+        full_name: str(fd, "full_name"), phone: opt(fd, "phone"), about: opt(fd, "about"),
         ...(fd.has("address_form") ? {
           greet_name: opt(fd, "greet_name")?.slice(0, 40) ?? null,
           address_form: ["he", "she"].includes(str(fd, "address_form")) ? str(fd, "address_form") : "none",
