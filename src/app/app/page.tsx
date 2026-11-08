@@ -14,6 +14,9 @@ import { loadMood } from "@/lib/mood";
 import { bishkekHour, greetingFor, mascotSrc } from "@/lib/mascot";
 import { showMonthSummary, type Stats } from "@/lib/achievements";
 import { MonthSummaryCard, StreakChip } from "@/components/achievements";
+import { LearnHomeCard } from "@/components/learn/learn-home-card";
+import { Scene } from "@/components/learn/scenes";
+import { isLeader } from "@/lib/learn";
 
 export const metadata = { title: "Главная" };
 
@@ -138,6 +141,9 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
           )}
         </div>
       </div>
+      <LearnHomeCard userId={s.userId} text={isLeader(s) ? "Как вести работу в приложении — по шагам" : "Как работать в приложении — по шагам"}>
+        <Scene name="start-install" />
+      </LearnHomeCard>
       {birthdays.length > 0 && (
         <div className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}

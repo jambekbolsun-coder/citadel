@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireActive } from "@/lib/auth";
 import { LessonView } from "@/components/learn/views";
+import { LearnSeen } from "@/components/learn/learn-home-card";
 import { LESSONS, lessonFor } from "@/lib/learn";
 
 export async function generateMetadata({ params }: PageProps<"/app/learn/[id]">) {
@@ -14,5 +15,10 @@ export default async function LessonPage({ params }: PageProps<"/app/learn/[id]"
   // Чужой урок (другая роль) для сотрудника не существует
   const found = lessonFor(s, id);
   if (!found) notFound();
-  return <LessonView {...found} />;
+  return (
+    <>
+      <LearnSeen userId={s.userId} />
+      <LessonView {...found} />
+    </>
+  );
 }
