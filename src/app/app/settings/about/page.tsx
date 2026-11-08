@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { requireActive } from "@/lib/auth";
 import { Card, PageHeader } from "@/components/ui";
-import { AUTHOR_TEXT } from "@/lib/help-content";
+import { AUTHOR_TEXT } from "@/lib/about";
 import { APP_VERSION } from "@/lib/version";
 import { APP_ICON } from "@/lib/brand";
 import { ResetAppButton } from "@/components/pwa";
@@ -29,8 +29,7 @@ export default async function About() {
           <blockquote className="text-[15px] leading-relaxed">{AUTHOR_TEXT}</blockquote>
         </Card>
         <ul className="grouped">
-          <li><Link href="/app/help" className="row"><span className="flex-1 font-medium">Инструкции · как пользоваться</span></Link></li>
-          <li><Link href="/app/help/troubleshooting" className="row"><span className="flex-1 font-medium">Поддержка и устранение проблем</span></Link></li>
+          <li><Link href="/app/learn" className="row"><span className="flex-1 font-medium">Обучение · с чего начать</span></Link></li>
           <li><Link href="/privacy" className="row"><span className="flex-1 font-medium">Политика конфиденциальности</span></Link></li>
         </ul>
       </div>

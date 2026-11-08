@@ -118,6 +118,7 @@ export function settingsGroups(v: Viewer): SettingsGroup[] {
   const has = (href: string) => allowed(v, href);
   const rows = (list: (SettingsRow | false)[]) => list.filter((x): x is SettingsRow => !!x);
   const groups: SettingsGroup[] = [
+    { title: "Обучение", rows: [{ href: "/app/learn", label: "Обучение · с чего начать", icon: "graduation" }] },
     {
       title: "Профиль и аккаунт",
       rows: rows([
@@ -177,10 +178,9 @@ export function settingsGroups(v: Viewer): SettingsGroup[] {
   ]);
   if (company.length) groups.push({ title: "Компания и управление", rows: company });
   groups.push({
-    title: "Помощь",
+    title: "О приложении",
     rows: [
-      { href: "/app/help", label: "Инструкции · как пользоваться", icon: "book" },
-      { href: "/app/help/about", label: "О приложении и авторе", icon: "info" },
+      { href: "/app/settings/about", label: "О приложении и авторе", icon: "info" },
       { href: "/privacy", label: "Политика конфиденциальности", icon: "file" },
     ],
   });
@@ -214,11 +214,11 @@ export function titleFor(path: string): string {
     "/app/shoots/new": "Новая съёмка",
     "/app/reports/speed": "Скорость",
     "/app/campaigns/new": "Новая кампания",
-    "/app/help": "Инструкции",
-    "/app/help/about": "О приложении",
+    "/app/learn": "Обучение",
+    "/app/settings/about": "О приложении",
   };
   if (exact[path]) return exact[path];
-  if (path.startsWith("/app/help/")) return "Инструкции";
+  if (path.startsWith("/app/learn/")) return "Обучение";
   const item = [...NAV].sort((a, b) => b.href.length - a.href.length).find((i) => i.href !== "/app" && (path === i.href || path.startsWith(i.href + "/")));
   return item?.label ?? "SMM KADR";
 }
@@ -226,7 +226,7 @@ export function titleFor(path: string): string {
 /** Куда ведёт «Назад» с вложенного экрана; null — экран верхнего уровня. */
 export function backFor(path: string): string | null {
   const parts = path.split("/").filter(Boolean);
-  if (parts[1] === "help") return parts.length > 2 ? "/app/help" : "/app/settings";
+  if (parts[1] === "learn") return parts.length > 2 ? "/app/learn" : "/app/settings";
   if (parts.length <= 2) return null;
   if (parts[1] === "settings") return "/app/settings";
   if (parts[1] === "reports" && parts[2] === "client") return "/app/reports";

@@ -33,6 +33,13 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // «Инструкции» заменены «Обучением»: старые ссылки и закладки не должны вести в пустоту
+  async redirects() {
+    return [
+      { source: "/app/help/about", destination: "/app/settings/about", permanent: false },
+      { source: "/app/help/:path*", destination: "/app/learn", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

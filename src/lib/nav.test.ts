@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { availableWorkTabs, backFor, canOpen, defaultWorkTab, plusActions, resolveWorkTab, settingsGroups, titleFor, visibleNav, WORK_TABS, type Viewer } from "./nav";
-import { AUTHOR_TEXT, HELP_TOPICS, searchHelp } from "./help-content";
+import { AUTHOR_TEXT } from "./about";
 
 // Права ролей — как в seed 0005; владелец получает всё
 const ROLE_PERMS: Record<string, string[]> = {
@@ -100,7 +100,7 @@ describe("настройки", () => {
   const hrefs = (v: Viewer) => settingsGroups(v).flatMap((g) => g.rows.map((r) => r.href));
   it("у исполнителя нет блока управления компанией и финансов", () => {
     const v = viewer("mobilographer");
-    expect(titles(v)).toEqual(["Профиль и аккаунт", "Работа", "Приложение", "Безопасность", "Помощь"]);
+    expect(titles(v)).toEqual(["Обучение", "Профиль и аккаунт", "Работа", "Приложение", "Безопасность", "О приложении"]);
     for (const h of ["/app/finance", "/app/payroll", "/app/reports", "/app/team", "/app/audit", "/app/settings/roles"]) expect(hrefs(v)).not.toContain(h);
   });
   it("владелец видит управление компанией", () => {
@@ -137,21 +137,17 @@ describe("верхняя панель", () => {
   });
 });
 
-describe("инструкции и реклама", () => {
+describe("обучение и реклама", () => {
   const hrefs = (v: Viewer) => settingsGroups(v).flatMap((g) => g.rows.map((r) => r.href));
   const ALL = ["owner", "manager", "accountant", "project_manager", "creative_director", "targetologist", "mobilographer", "editor"];
-  it("пункт «Инструкции» и «О приложении» есть у каждой роли", () => {
+  it("пункт «Обучение» и «О приложении» есть у каждой роли", () => {
     for (const r of ALL) {
       const h = hrefs(viewer(r));
-      expect(h, r).toContain("/app/help");
-      expect(h, r).toContain("/app/help/about");
+      expect(h, r).toContain("/app/learn");
+      expect(h, r).toContain("/app/settings/about");
     }
   });
-  it("ссылки инструкций не ведут в запрещённые разделы", () => {
-    for (const r of ALL) {
-      const v = viewer(r);
-      for (const t of HELP_TOPICS) for (const l of t.links) if (!canOpen(v, l.href)) expect(visibleNav(v).map((i) => i.href)).not.toContain(l.href.split("?")[0]);
-    }
+  it("запрещённые разделы закрыты по правам", () => {
     const mob = viewer("mobilographer");
     expect(canOpen(mob, "/app/finance")).toBe(false);
     expect(canOpen(mob, "/app/finance/expense")).toBe(false);
@@ -161,19 +157,6 @@ describe("инструкции и реклама", () => {
     expect(canOpen(viewer("accountant"), "/app/finance/expense")).toBe(true);
     expect(canOpen(viewer("targetologist"), "/app/campaigns/new")).toBe(true);
   });
-  it("статья «Таргет» объясняет отсутствие интеграций и правила расходов", () => {
-    const t = HELP_TOPICS.find((x) => x.id === "ads")!;
-    const text = [t.summary, ...t.steps, ...t.mistakes].join(" ");
-    expect(text).toMatch(/интеграций с рекламными API.*НЕТ/i);
-    expect(text).toContain("$5 + $3 + $2 (пауза) = $8");
-    expect(text).toContain("$20");
-    expect(text).not.toMatch(/подключ\w+ рекламн\w+ площад/i);
-  });
-  it("поиск по инструкциям", () => {
-    expect(searchHelp("PIN").map((t) => t.id)).toContain("first-login");
-    expect(searchHelp("CPL").map((t) => t.id)).toEqual(["ads"]);
-    expect(searchHelp("несуществующееслово")).toEqual([]);
-  });
   it("авторский текст сохранён дословно", () => {
     expect(AUTHOR_TEXT).toBe("Это идеальное приложение создал наш господин Жамшутов Бекболсун Ренатович. Его гениальность на высшем уровне, поэтому он смог создать такое удобное и расширенное приложение.");
   });
@@ -181,10 +164,11 @@ describe("инструкции и реклама", () => {
     expect(plusActions(viewer("targetologist")).map((a) => a.key)).toContain("ads");
     expect(plusActions(viewer("mobilographer")).map((a) => a.key)).not.toContain("ads");
   });
-  it("«Назад» из инструкций", () => {
-    expect(backFor("/app/help")).toBe("/app/settings");
-    expect(backFor("/app/help/ads")).toBe("/app/help");
-    expect(titleFor("/app/help/about")).toBe("О приложении");
-    expect(titleFor("/app/help/ads")).toBe("Инструкции");
+  it("«Назад» из обучения", () => {
+    expect(backFor("/app/learn")).toBe("/app/settings");
+    expect(backFor("/app/learn/start")).toBe("/app/learn");
+    expect(backFor("/app/settings/about")).toBe("/app/settings");
+    expect(titleFor("/app/settings/about")).toBe("О приложении");
+    expect(titleFor("/app/learn/start")).toBe("Обучение");
   });
 });
